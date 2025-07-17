@@ -1,0 +1,21 @@
+{
+  "name": "prettier-plugin-wat",
+  "version": "0.0.1",
+  "description": "Prettier plugin for WebAssembly Text format",
+  "keywords": [
+    "prettier",
+    "wasm"
+  ],
+  "license": "MIT",
+  "author": "Seiya",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
