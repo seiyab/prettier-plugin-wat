@@ -1,0 +1,9 @@
+root = false
+
+[*]
+end_of_line = lf
+insert_final_new_line = true
+
+[*.{js,ts}]
+indent_style = tab
+indent_size = 2
