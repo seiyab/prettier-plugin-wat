@@ -10,7 +10,8 @@ export default tseslint.config(
 		languageOptions: {
 			parserOptions: {
 				projectService: true,
-				tsconfigRootDir: import.meta.dirname,
+				// @ts-expect-error FIXME: resolve dirname
+				tsconfigRootDir: import.meta.dirname, // eslint-disable-line @typescript-eslint/no-unsafe-assignment
 			},
 		},
 	},
