@@ -1,3 +1,9 @@
 [submodule "references/prettier"]
 	path = references/prettier
 	url = git@github.com:prettier/prettier.git
+[submodule "references/prettier-plugin-svelte"]
+	path = references/prettier-plugin-svelte
+	url = git@github.com:sveltejs/prettier-plugin-svelte.git
+[submodule "references/prettier-plugin-sort-members"]
+	path = references/prettier-plugin-sort-members
+	url = git@github.com:seiyab/prettier-plugin-sort-members.git
