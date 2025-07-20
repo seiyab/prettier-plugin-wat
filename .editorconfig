@@ -4,6 +4,6 @@ root = false
 end_of_line = lf
 insert_final_new_line = true
 
-[*.{js,ts,mjs}]
+[*.{js,ts,mjs,json}]
 indent_style = tab
 indent_size = 2

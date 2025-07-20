@@ -15,4 +15,5 @@ export default tseslint.config(
 			},
 		},
 	},
+	{ ignores: ["references/**"] },
 );
