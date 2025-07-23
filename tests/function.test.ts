@@ -19,7 +19,7 @@ test.skip("function", async () => {
 `;
 
 	const result = await prettier.format(input, {
-		parser: "wast",
+		parser: "wat",
 		plugins: [plugin],
 	});
 

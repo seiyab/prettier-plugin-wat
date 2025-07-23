@@ -1,5 +1,5 @@
 {
-	"name": "prettier-plugin-wast",
+	"name": "prettier-plugin-wat",
 	"version": "0.0.1",
 	"description": "Prettier plugin for WebAssembly Text format",
 	"keywords": [
@@ -25,4 +25,3 @@
 		"vitest": "^3.2.4"
 	}
 }
-

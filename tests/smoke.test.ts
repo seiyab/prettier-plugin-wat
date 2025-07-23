@@ -4,7 +4,7 @@ import plugin from "../index";
 
 test("minimal", async () => {
 	const result = await prettier.format("(module)", {
-		parser: "wast",
+		parser: "wat",
 		plugins: [plugin],
 	});
 	expect(result).toBe("(module)\n");
