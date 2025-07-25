@@ -7,9 +7,8 @@ import {
 	parser,
 	isError,
 	isSuccess,
+	Unknown,
 } from "./p";
-
-type Unknown = { type: "Unknown"; value: string };
 
 export type WatNode = Unknown | Program | Module;
 

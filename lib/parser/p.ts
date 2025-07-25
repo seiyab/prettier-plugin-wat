@@ -1,3 +1,7 @@
+/**
+ * This file provides domain-inspecific parser implementation &  utilities
+ */
+
 export type ParserInput = { source: string; index: number };
 export type ParserOutput<T extends Typed> = { node: T; nextInput: ParserInput };
 export type ParserFunc<T extends Typed> = (i: ParserInput) => ParserOutput<T>;

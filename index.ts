@@ -1,7 +1,7 @@
 import { SupportLanguage, Parser, Printer } from "prettier";
 import { print } from "./lib/printer";
 import { Node } from "./lib/parser/p";
-import { parse, WatNode } from "./lib/parser/wat-syntax";
+import { parse, WatNode } from "./lib/parser/wat";
 
 export const languages: SupportLanguage[] = [
 	{ name: "WebAssembly Text", parsers: ["wat"], extensions: [".wat", ".wast"] },
