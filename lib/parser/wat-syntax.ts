@@ -1,4 +1,13 @@
-import { Fail, literal, ParserInput, ParserOutput, Node, parser } from "./p";
+import {
+	Fail,
+	literal,
+	ParserInput,
+	ParserOutput,
+	Node,
+	parser,
+	isError,
+	isSuccess,
+} from "./p";
 
 type Unknown = { type: "Unknown"; value: string };
 
@@ -16,7 +25,7 @@ function program(input: ParserInput): ParserOutput<Program> {
 	while (index < source.length) {
 		const out = parser(module).parse({ source, index });
 		index = out.nextInput.index;
-		if (out.node.type === "error") {
+		if (isError(out)) {
 			body.push({
 				type: "Unknown",
 				value: source.slice(index),
@@ -24,13 +33,19 @@ function program(input: ParserInput): ParserOutput<Program> {
 			});
 			index = source.length;
 			break;
+		} else if (isSuccess(out)) {
+			body.push(out.node);
+		} else {
+			// FIXME -- shouldn't reach here but type narrowing forces redundant `if`
+			throw new Error();
 		}
-		body.push(out.node);
 	}
 	return { node: { type: "Program", body }, nextInput: { source, index } };
 }
 
 type Module = { type: "Module" };
 function module(input: ParserInput): ParserOutput<Module | Fail> {
-	return literal("Module", "(module)").parse(input);
+	return literal("(module)")
+		.map((n) => ({ ...n, type: "Module" as const }))
+		.parse(input);
 }

@@ -12,7 +12,8 @@ type Location = { start: { offset: number }; end: { offset: number } };
 export type Node<T extends Typed> = T & { loc: Location };
 type Typed = { type: string };
 
-export type Fail = { type: "error"; reason?: string };
+export type Fail = { type: "Error"; reason?: string };
+export type Unknown = { type: "Unknown"; value: string };
 
 export function parser<T extends Typed>(fn: ParserFunc<T>): Parser<T> {
 	return { parse, map };
@@ -22,12 +23,9 @@ export function parser<T extends Typed>(fn: ParserFunc<T>): Parser<T> {
 		return {
 			node: {
 				...node,
-				loc: {
-					start: { offset: input.index },
-					end: { offset: nextInput.index },
-				},
+				loc: location({ start: input.index, end: nextInput.index }),
 			},
-			nextInput,
+			nextInput: node.type === "Error" ? input : nextInput,
 		};
 	}
 
@@ -40,21 +38,156 @@ export function parser<T extends Typed>(fn: ParserFunc<T>): Parser<T> {
 	}
 }
 
-export function literal<Type extends string>(
-	t: Type,
-	s: string,
-): Parser<{ type: Type; value: string } | Fail> {
+type Synchronized<
+	Open extends Typed,
+	Body extends Typed,
+	Close extends Typed,
+> = {
+	type: "Synchronized";
+	open: Node<Open>;
+	body: Node<Body>;
+	close: Node<Close>;
+};
+type Recovered<Open extends Typed, Body extends Typed, Close extends Typed> = {
+	type: "Recovered";
+	open: Node<Open>;
+	body?: Node<Body>;
+	close: Node<Close>;
+	rest: Node<Unknown>;
+};
+/**
+ * synchronized
+ * - parses open, body and close sequentially
+ * - when open fails to parse, synchronized results Fail
+ * - when it fails to parse after open, it searches close and recover on find
+ */
+export function synchronized<
+	Open extends Typed,
+	Body extends Typed,
+	Close extends Typed,
+>({
+	open,
+	body,
+	close,
+}: {
+	open: ParserFunc<Open | Fail>;
+	body: ParserFunc<Body | Fail>;
+	close: ParserFunc<Close | Fail>;
+}): Parser<
+	Synchronized<Open, Body, Close> | Recovered<Open, Body, Close> | Fail
+> {
 	return parser(parse);
 
-	function parse({
-		source,
-		index,
-	}: ParserInput): ParserOutput<{ type: Type; value: string } | Fail> {
+	function parse(
+		input: ParserInput,
+	): ParserOutput<
+		Synchronized<Open, Body, Close> | Recovered<Open, Body, Close> | Fail
+	> {
+		let current = input;
+		const oo = parser(open).parse(current);
+		if (isError(oo)) return oo;
+		// @ts-expect-error -- fixme
+		const openNode: Node<Open> = oo.node;
+		current = oo.nextInput;
+
+		const bo = parser(body).parse(current);
+		if (isError(bo)) {
+			const r = parser(recover({ open: openNode })).parse(current);
+			if (!isSuccess(r)) return bo;
+			return r;
+		}
+
+		// @ts-expect-error -- fixme
+		const bodyNode: Node<Body> = bo.node;
+		current = bo.nextInput;
+
+		const co = parser(close).parse(current);
+		if (isError(co)) {
+			const r = parser(recover({ open: openNode, body: bodyNode })).parse(
+				current,
+			);
+			if (!isSuccess(r)) return co;
+			return r;
+		}
+
+		return {
+			node: {
+				type: "Synchronized",
+				open: openNode,
+				body: bodyNode,
+				// @ts-expect-error -- fixme
+				close: co.node,
+			},
+			nextInput: co.nextInput,
+		};
+	}
+
+	type Progress = { open: Node<Open>; body?: Node<Body> };
+	function recover(
+		progress: Progress,
+	): (i: ParserInput) => ParserOutput<Recovered<Open, Body, Close> | Fail> {
+		const cp = parser(close);
+		return (input) => {
+			for (let i = input.index; i < input.source.length; i++) {
+				const currentInput = { source: input.source, index: i };
+				const co = cp.parse(currentInput);
+				if (!isSuccess(co)) continue;
+				return {
+					node: {
+						type: "Recovered",
+						open: progress.open,
+						body: progress.body,
+						rest: unknown(input.source, { start: input.index, end: i }),
+						close: co.node,
+					},
+					nextInput: { ...input, index: input.source.length },
+				};
+			}
+			return {
+				node: { type: "Error" },
+				nextInput: { ...input, index: input.index },
+			};
+		};
+	}
+}
+
+type Literal = { type: "Literal"; value: string };
+export function literal(s: string): Parser<Literal | Fail> {
+	return parser(parse);
+
+	function parse({ source, index }: ParserInput): ParserOutput<Literal | Fail> {
 		if (source.startsWith(s, index))
 			return {
-				node: { type: t, value: s },
+				node: { type: "Literal", value: s },
 				nextInput: { source, index: index + s.length },
 			};
-		return { node: { type: "error" }, nextInput: { source, index } };
+		return { node: { type: "Error" }, nextInput: { source, index } };
 	}
+}
+
+function unknown(
+	source: string,
+	loc: { start: number; end: number },
+): Node<Unknown> {
+	return {
+		type: "Unknown",
+		value: source.substring(loc.start, loc.end),
+		loc: location(loc),
+	};
+}
+
+function location(loc: { start: number; end: number }): Location {
+	return { start: { offset: loc.start }, end: { offset: loc.end } };
+}
+
+export function isError<T extends Typed>(
+	out: ParserOutput<Node<T | Fail>>,
+): out is ParserOutput<Node<Fail>> {
+	return out.node.type === "Error";
+}
+
+export function isSuccess<T extends Typed>(
+	out: ParserOutput<Node<T | Fail>>,
+): out is ParserOutput<Node<T>> {
+	return out.node.type !== "Error";
 }
