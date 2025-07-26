@@ -19,7 +19,11 @@ type Typed = { type: string };
 export type Fail = { type: "Error"; reason?: string };
 export type Unknown = { type: "Unknown"; value: string };
 
-export function parser<T extends Typed>(fn: ParserFunc<T>): Parser<T> {
+export function parser<T extends Typed>(
+	p: ParserFunc<T> | Parser<T>,
+): Parser<T> {
+	if (typeof p !== "function") return p;
+	const fn = p;
 	return { parse, map };
 
 	function parse(input: ParserInput): ParserOutput<Node<T>> {
@@ -74,9 +78,9 @@ export function synchronized<
 	body,
 	close,
 }: {
-	open: ParserFunc<Open | Fail>;
-	body: ParserFunc<Body | Fail>;
-	close: ParserFunc<Close | Fail>;
+	open: ParserFunc<Open | Fail> | Parser<Open | Fail>;
+	body: ParserFunc<Body | Fail> | Parser<Body | Fail>;
+	close: ParserFunc<Close | Fail> | Parser<Close | Fail>;
 }): Parser<
 	Synchronized<Open, Body, Close> | Recovered<Open, Body, Close> | Fail
 > {

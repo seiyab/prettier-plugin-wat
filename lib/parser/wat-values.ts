@@ -1,7 +1,3 @@
-/**
- * This file contains leaf nodes that don't contain other nodes inside them
- */
-
 import { Fail, ParserInput, ParserOutput } from "./p";
 
 type Identifier = { type: "Identifier"; value: string };

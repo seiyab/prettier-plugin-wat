@@ -1,6 +1,6 @@
 import { doc, Printer } from "prettier";
 
-import { WatNode } from "./parser/wat-syntax";
+import { WatNode } from "./parser/wat";
 
 const { join, hardline } = doc.builders;
 

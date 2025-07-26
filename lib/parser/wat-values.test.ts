@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { identifier } from "./wat-leaf";
+import { identifier } from "./wat-values";
 import { ParserInput } from "./p";
 
 describe("identifier", () => {
