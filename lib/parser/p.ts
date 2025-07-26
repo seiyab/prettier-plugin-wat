@@ -9,6 +9,7 @@ export type ParserFunc<T extends Typed> = (i: ParserInput) => ParserOutput<T>;
 export type Parser<T extends Typed> = {
 	parse: ParserFunc<Node<T>>;
 	map: <U extends Typed>(f: (v: T) => U) => Parser<U>;
+	opt: () => Parser<Exclude<T, Fail> | None>;
 };
 
 type Location = { start: { offset: number }; end: { offset: number } };
@@ -18,13 +19,14 @@ type Typed = { type: string };
 
 export type Fail = { type: "Error"; reason?: string };
 export type Unknown = { type: "Unknown"; value: string };
+export type None = { type: "None" };
 
 export function parser<T extends Typed>(
 	p: ParserFunc<T> | Parser<T>,
 ): Parser<T> {
 	if (typeof p !== "function") return p;
 	const fn = p;
-	return { parse, map };
+	return { parse, map, opt };
 
 	function parse(input: ParserInput): ParserOutput<Node<T>> {
 		const { node, nextInput } = fn(input);
@@ -42,6 +44,15 @@ export function parser<T extends Typed>(
 		function newFn(input: ParserInput): ParserOutput<U> {
 			const out = fn(input);
 			return { ...out, node: f(out.node) };
+		}
+	}
+
+	function opt(): Parser<Exclude<T, Fail> | None> {
+		return parser(optFn);
+		function optFn(input: ParserInput): ParserOutput<Exclude<T, Fail> | None> {
+			const out = parser(fn).parse(input);
+			if (isSuccess(out)) return out;
+			return { node: { type: "None" }, nextInput: input };
 		}
 	}
 }
@@ -195,7 +206,7 @@ export function isError<T extends Typed>(
 }
 
 export function isSuccess<T extends Typed>(
-	out: ParserOutput<Node<T | Fail>>,
-): out is ParserOutput<Node<T>> {
+	out: ParserOutput<Node<T>>,
+): out is ParserOutput<Node<Exclude<T, Fail>>> {
 	return out.node.type !== "Error";
 }
