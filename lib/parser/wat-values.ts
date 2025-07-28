@@ -1,6 +1,6 @@
 import { Fail, ParserInput, ParserOutput } from "./p";
 
-type Identifier = { type: "Identifier"; value: string };
+export type Identifier = { type: "Identifier"; value: string };
 export function identifier(
 	input: ParserInput,
 ): ParserOutput<Identifier | Fail> {

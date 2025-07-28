@@ -8,7 +8,9 @@ export type ParserFunc<T extends Typed> = (i: ParserInput) => ParserOutput<T>;
 
 export type Parser<T extends Typed> = {
 	parse: ParserFunc<Node<T>>;
-	map: <U extends Typed>(f: (v: T) => U) => Parser<U>;
+	map: <U extends Typed>(
+		f: (v: Exclude<T, Fail>) => U,
+	) => Parser<Fail extends T ? U | Fail : U>;
 	opt: () => Parser<Exclude<T, Fail> | None>;
 };
 
@@ -39,11 +41,17 @@ export function parser<T extends Typed>(
 		};
 	}
 
-	function map<U extends Typed>(f: (v: T) => U): Parser<U> {
+	function map<U extends Typed>(
+		f: (v: Exclude<T, Fail>) => U,
+	): Parser<Fail extends T ? U | Fail : U> {
 		return parser(newFn);
-		function newFn(input: ParserInput): ParserOutput<U> {
-			const out = fn(input);
-			return { ...out, node: f(out.node) };
+		function newFn(
+			input: ParserInput,
+		): ParserOutput<Fail extends T ? U | Fail : U> {
+			const out = parser(fn).parse(input);
+			if (isSuccess(out)) return { ...out, node: f(out.node) };
+			// @ts-expect-error -- fixme
+			return out;
 		}
 	}
 
