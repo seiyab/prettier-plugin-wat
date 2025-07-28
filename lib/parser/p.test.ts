@@ -1,24 +1,42 @@
 import { describe, test, expect } from "vitest";
-import { do_, literal, ParserInput } from "./p";
+import { literal, many, oneOf, ParserInput } from "./p";
 
-describe("do", () => {
-	const p = do_(($) => {
-		const a = $(literal("abc"));
-		const d = $(literal("def"));
-		const g = $(literal("ghi"));
-		return { type: "Test" as const, values: [a, d, g] };
+describe("oneOf", () => {
+	test("found first", () => {
+		const p = oneOf([literal("a"), literal("b")]);
+		const out = p.parse(input("a"));
+		expect(out.node).toEqual({
+			type: "Literal",
+			value: "a",
+			loc: { start: { offset: 0 }, end: { offset: 1 } },
+		});
 	});
+	test("found second", () => {
+		const p = oneOf([literal("a"), literal("b")]);
+		const out = p.parse(input("b"));
+		expect(out.node).toEqual({
+			type: "Literal",
+			value: "b",
+			loc: { start: { offset: 0 }, end: { offset: 1 } },
+		});
+	});
+	test("not found", () => {
+		const p = oneOf([literal("a"), literal("b")]);
+		const out = p.parse(input("c"));
+		expect(out.node.type).toBe("Error");
+	});
+});
 
-	test("successfull", () => {
-		const out = p.parse(input("abcdefghi"));
-		expect(out.node.type).toBe("Test");
-		// @ts-expect-error -- assertion above must confirm the type
-		const node: { type: "Test" } & typeof out.node = out.node;
-		expect(node.values).toEqual([
-			expect.objectContaining({ type: "Literal", value: "abc" }),
-			expect.objectContaining({ type: "Literal", value: "def" }),
-			expect.objectContaining({ type: "Literal", value: "ghi" }),
-		]);
+describe("many", () => {
+	test("found three", () => {
+		const p = many(literal("a"));
+		const out = p.parse(input("aaa"));
+		expect(out.node.nodes.length).toBe(3);
+	});
+	test("found zero", () => {
+		const p = many(literal("a"));
+		const out = p.parse(input("bbb"));
+		expect(out.node.nodes.length).toBe(0);
 	});
 });
 

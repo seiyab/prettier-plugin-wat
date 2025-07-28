@@ -66,7 +66,11 @@ export function parser<T extends Typed>(
 }
 
 export function do_<T extends Typed>(
-	process: ($: <S extends Typed>(p: Parser<S> | ParserFunc<S>) => Node<S>) => T,
+	process: (
+		$: <S extends Typed>(
+			p: Parser<S> | ParserFunc<S>,
+		) => Node<Exclude<S, Fail>>,
+	) => T,
 ): Parser<T | Fail> {
 	class Interrupt extends Error {}
 
@@ -109,8 +113,44 @@ export function literal(s: string): Parser<Literal | Fail> {
 	}
 }
 
+export function oneOf<T extends Typed>(
+	parsers: (Parser<T> | ParserFunc<T>)[],
+): Parser<T | Fail> {
+	return parser(parse);
+	function parse(input: ParserInput): ParserOutput<T | Fail> {
+		for (const p of parsers) {
+			const out = parser(p).parse(input);
+			if (isSuccess(out)) return out;
+		}
+		return { node: { type: "Error" }, nextInput: input };
+	}
+}
+
 function location(loc: { start: number; end: number }): Location {
 	return { start: { offset: loc.start }, end: { offset: loc.end } };
+}
+
+type Many<T extends Typed> = { type: "Many"; nodes: Node<T>[] };
+export function many<T extends Typed>(
+	elem: Parser<T> | ParserFunc<T>,
+): Parser<Many<Exclude<T, Fail>>> {
+	const p = parser(elem);
+	return parser(parse);
+	function parse(input: ParserInput): ParserOutput<Many<Exclude<T, Fail>>> {
+		const nodes: Node<Exclude<T, Fail>>[] = [];
+		let currentInput = input;
+		for (;;) {
+			const out = p.parse(currentInput);
+			if (isError(out)) {
+				break;
+			}
+			if (isSuccess(out)) {
+				nodes.push(out.node);
+				currentInput = out.nextInput;
+			}
+		}
+		return { node: { type: "Many", nodes }, nextInput: currentInput };
+	}
 }
 
 export function isError<T extends Typed>(

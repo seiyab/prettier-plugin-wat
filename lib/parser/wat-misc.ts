@@ -8,4 +8,4 @@ export function spaces(input: ParserInput): ParserOutput<None> {
 	}
 	return { node: { type: "None" }, nextInput: { ...input, index: i } };
 }
-const spacechars: ReadonlySet<string> = new Set([" ", "\n"]);
+const spacechars: ReadonlySet<string> = new Set([" ", "\t", "\n", "\r"]);

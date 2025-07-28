@@ -1,4 +1,22 @@
-import { Fail, ParserInput, ParserOutput } from "./p";
+import { Fail, parser, Parser, ParserInput, ParserOutput } from "./p";
+
+export type ValueNodes = Identifier | Index;
+
+export type Index = { type: "Index"; value: number };
+export const u32: Parser<Index | Fail> = parser(
+	(input): ParserOutput<Index | Fail> => {
+		const { source, index } = input;
+		let i = index;
+		while (i < source.length && source[i] >= "0" && source[i] <= "9") {
+			i++;
+		}
+		if (i === index) {
+			return { node: { type: "Error" }, nextInput: input };
+		}
+		const value = parseInt(source.substring(index, i), 10);
+		return { node: { type: "Index", value }, nextInput: { source, index: i } };
+	},
+);
 
 export type Identifier = { type: "Identifier"; value: string };
 export function identifier(
