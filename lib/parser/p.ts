@@ -57,6 +57,36 @@ export function parser<T extends Typed>(
 	}
 }
 
+export function do_<T extends Typed>(
+	process: ($: <S extends Typed>(p: Parser<S> | ParserFunc<S>) => Node<S>) => T,
+): Parser<T | Fail> {
+	class Interrupt extends Error {}
+
+	return parser(p);
+	function p(input: ParserInput): ParserOutput<T | Fail> {
+		let currentInput = input;
+
+		try {
+			const node = process($);
+			return { node, nextInput: currentInput };
+		} catch (e: unknown) {
+			if (e instanceof Interrupt) {
+				return { node: { type: "Error" }, nextInput: input };
+			}
+			throw e;
+		}
+
+		function $<S extends Typed>(
+			p: Parser<S> | ParserFunc<S>,
+		): Node<Exclude<S, Fail>> {
+			const out = parser(p).parse(currentInput);
+			currentInput = out.nextInput;
+			if (isSuccess(out)) return out.node;
+			throw new Interrupt();
+		}
+	}
+}
+
 type Synchronized<
 	Open extends Typed,
 	Body extends Typed,
