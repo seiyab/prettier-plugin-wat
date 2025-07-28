@@ -7,30 +7,13 @@ const o = (u: object): unknown => expect.objectContaining(u);
 describe("module", () => {
 	test("(module)", () => {
 		const out = module_.parse(input("(module)"));
-		expect(out.node).toEqual(
-			o({ type: "Module", id: undefined, rest: undefined }),
-		);
+		expect(out.node).toEqual(o({ type: "Module", id: undefined }));
 	});
 
 	test("(module $myModule)", () => {
 		const out = module_.parse(input("(module $myModule)"));
 		expect(out.node).toEqual(
-			o({
-				type: "Module",
-				id: o({ type: "Identifier", value: "$myModule" }),
-				rest: undefined,
-			}),
-		);
-	});
-
-	test("(module $myModule *unknown string*)", () => {
-		const out = module_.parse(input("(module $myModule *unknown string*)"));
-		expect(out.node).toEqual(
-			o({
-				type: "Module",
-				id: o({ type: "Identifier", value: "$myModule" }),
-				rest: o({ type: "Unknown", value: " *unknown string*" }),
-			}),
+			o({ type: "Module", id: o({ type: "Identifier", value: "$myModule" }) }),
 		);
 	});
 });

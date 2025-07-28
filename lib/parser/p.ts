@@ -95,119 +95,6 @@ export function do_<T extends Typed>(
 	}
 }
 
-type Synchronized<
-	Open extends Typed,
-	Body extends Typed,
-	Close extends Typed,
-> = {
-	type: "Synchronized";
-	open: Node<Open>;
-	body: Node<Body>;
-	close: Node<Close>;
-};
-type Recovered<Open extends Typed, Body extends Typed, Close extends Typed> = {
-	type: "Recovered";
-	open: Node<Open>;
-	body?: Node<Body>;
-	close: Node<Close>;
-	rest: Node<Unknown>;
-};
-/**
- * synchronized
- * - parses open, body and close sequentially
- * - when open fails to parse, synchronized results Fail
- * - when it fails to parse after open, it searches close and recover on find
- */
-export function synchronized<
-	Open extends Typed,
-	Body extends Typed,
-	Close extends Typed,
->({
-	open,
-	body,
-	close,
-}: {
-	open: ParserFunc<Open | Fail> | Parser<Open | Fail>;
-	body: ParserFunc<Body | Fail> | Parser<Body | Fail>;
-	close: ParserFunc<Close | Fail> | Parser<Close | Fail>;
-}): Parser<
-	Synchronized<Open, Body, Close> | Recovered<Open, Body, Close> | Fail
-> {
-	return parser(parse);
-
-	function parse(
-		input: ParserInput,
-	): ParserOutput<
-		Synchronized<Open, Body, Close> | Recovered<Open, Body, Close> | Fail
-	> {
-		let current = input;
-		const oo = parser(open).parse(current);
-		if (isError(oo)) return oo;
-		// @ts-expect-error -- fixme
-		const openNode: Node<Open> = oo.node;
-		current = oo.nextInput;
-
-		const bo = parser(body).parse(current);
-		if (isError(bo)) {
-			const r = parser(recover({ open: openNode })).parse(current);
-			if (!isSuccess(r)) return bo;
-			return r;
-		}
-
-		// @ts-expect-error -- fixme
-		const bodyNode: Node<Body> = bo.node;
-		current = bo.nextInput;
-
-		const co = parser(close).parse(current);
-		if (isError(co)) {
-			const r = parser(recover({ open: openNode, body: bodyNode })).parse(
-				current,
-			);
-			if (!isSuccess(r)) return co;
-			return r;
-		}
-
-		return {
-			node: {
-				type: "Synchronized",
-				open: openNode,
-				body: bodyNode,
-				// @ts-expect-error -- fixme
-				close: co.node,
-			},
-			nextInput: co.nextInput,
-		};
-	}
-
-	type Progress = { open: Node<Open>; body?: Node<Body> };
-	function recover(
-		progress: Progress,
-	): (i: ParserInput) => ParserOutput<Recovered<Open, Body, Close> | Fail> {
-		const cp = parser(close);
-		return (input) => {
-			for (let i = input.index; i < input.source.length; i++) {
-				const currentInput = { source: input.source, index: i };
-				const co = cp.parse(currentInput);
-				if (!isSuccess(co)) continue;
-				return {
-					node: {
-						type: "Recovered",
-						open: progress.open,
-						body: progress.body,
-						rest: unknown(input.source, { start: input.index, end: i }),
-						close: co.node,
-					},
-					nextInput: { ...input, index: input.source.length },
-				};
-			}
-			return {
-				node: { type: "Error" },
-				nextInput: { ...input, index: input.index },
-			};
-		};
-	}
-}
-
 type Literal = { type: "Literal"; value: string };
 export function literal(s: string): Parser<Literal | Fail> {
 	return parser(parse);
@@ -220,17 +107,6 @@ export function literal(s: string): Parser<Literal | Fail> {
 			};
 		return { node: { type: "Error" }, nextInput: { source, index } };
 	}
-}
-
-function unknown(
-	source: string,
-	loc: { start: number; end: number },
-): Node<Unknown> {
-	return {
-		type: "Unknown",
-		value: source.substring(loc.start, loc.end),
-		loc: location(loc),
-	};
 }
 
 function location(loc: { start: number; end: number }): Location {

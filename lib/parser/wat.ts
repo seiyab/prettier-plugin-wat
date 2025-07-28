@@ -10,7 +10,6 @@ import {
 	Unknown,
 	Parser,
 	do_,
-	synchronized,
 } from "./p";
 import { spaces } from "./wat-misc";
 import { identifier, Identifier } from "./wat-values";
@@ -47,25 +46,15 @@ function program(input: ParserInput): ParserOutput<Program> {
 	return { node: { type: "Program", body }, nextInput: { source, index } };
 }
 
-type Module = { type: "Module"; id?: Node<Identifier>; rest?: Unknown };
-export const module_: Parser<Module | Fail> = synchronized({
-	open: do_(($) => {
-		void $(literal("("));
-		void $(spaces);
-		void $(literal("module"));
-		void $(spaces);
-		return { type: "None" };
-	}),
-	body: do_(($) => {
-		const id = $(parser(identifier).opt()); // TODO: modulefields
-		return { type: "_body", id: id.type === "Identifier" ? id : undefined };
-	}),
-	close: do_(($) => {
-		void $(spaces);
-		void $(literal(")"));
-		return { type: "None" };
-	}),
-}).map((sync): Module => {
-	const rest = sync.type === "Recovered" ? sync.rest : undefined;
-	return { type: "Module", id: sync.body?.id, rest };
+type Module = { type: "Module"; id?: Node<Identifier> };
+export const module_: Parser<Module | Fail> = do_(($) => {
+	void $(literal("("));
+	void $(spaces);
+	void $(literal("module"));
+	void $(spaces);
+	const id = $(parser(identifier).opt());
+	// TODO: modulefields
+	void $(spaces);
+	void $(literal(")"));
+	return { type: "Module", id: id.type !== "None" ? id : undefined };
 });
