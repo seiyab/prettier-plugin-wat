@@ -9,15 +9,18 @@
 	"license": "MIT",
 	"author": "Seiya",
 	"type": "module",
-	"main": "index.ts",
+	"main": "dist/index.js",
 	"scripts": {
-		"test": "vitest run",
+		"build": "./scripts/build.mjs",
+		"prepublishOnly": "npm run build",
+		"test": "npm run build && vitest run",
 		"lint": "eslint .",
-		"check": "prettier -c . && tsc && eslint . && vitest run",
+		"check": "prettier -c . && tsc && eslint . && npm test",
 		"format": "prettier -w ."
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.31.0",
+		"esbuild": "^0.21.4",
 		"eslint": "^8.57.1",
 		"prettier": "^3.6.2",
 		"typescript": "^5.8.3",

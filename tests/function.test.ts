@@ -1,6 +1,5 @@
 import { test, expect } from "vitest";
 import * as prettier from "prettier";
-import plugin from "../index";
 
 test.skip("function", async () => {
 	const input = `(module
@@ -20,7 +19,7 @@ test.skip("function", async () => {
 
 	const result = await prettier.format(input, {
 		parser: "wat",
-		plugins: [plugin],
+		plugins: ["./dist/index.mjs"],
 	});
 
 	expect(result).toBe(expected);

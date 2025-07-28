@@ -1,4 +1,4 @@
-import { SupportLanguage, Parser, Printer } from "prettier";
+import type { SupportLanguage, Parser, Printer } from "prettier";
 import { print } from "./lib/printer";
 import { Node } from "./lib/parser/p";
 import { parse, WatNode } from "./lib/parser/wat";

@@ -1,11 +1,12 @@
 import { test, expect } from "vitest";
 import * as prettier from "prettier";
-import plugin from "../index";
+// import plugin from "../dist/index";
 
-test.skip("minimal", async () => {
+test("minimal", async () => {
 	const result = await prettier.format("(module)", {
 		parser: "wat",
-		plugins: [plugin],
+		plugins: ["./dist/index.mjs"],
+		filename: "test.wat",
 	});
 	expect(result).toBe("(module)\n");
 });
