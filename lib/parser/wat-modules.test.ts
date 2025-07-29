@@ -1,17 +1,17 @@
 import { describe, test, expect } from "vitest";
-import { ParserInput } from "./p";
 import { module_, function_ } from "./wat-modules";
+import { check, input } from "./testing";
 
 const o = (u: object): unknown => expect.objectContaining(u);
 
 describe("module", () => {
 	test("(module)", () => {
-		const out = module_.parse(input("(module)"));
+		const out = check(module_.parse(input("(module)")));
 		expect(out.node).toEqual(o({ type: "Module", id: undefined }));
 	});
 
 	test("(module $myModule)", () => {
-		const out = module_.parse(input("(module $myModule)"));
+		const out = check(module_.parse(input("(module $myModule)")));
 		expect(out.node).toEqual(
 			o({ type: "Module", id: o({ type: "Identifier", value: "$myModule" }) }),
 		);
@@ -20,12 +20,14 @@ describe("module", () => {
 
 describe("function", () => {
 	test("example in MDN", () => {
-		const out = function_.parse(
-			input(
-				`(func (param i32) (param f32) (local f64)
+		const out = check(
+			function_.parse(
+				input(
+					`(func (param i32) (param f32) (local f64)
 			local.get 0
 			local.get 1
 			local.get 2)`,
+				),
 			),
 		);
 		expect(out.node).toEqual(
@@ -60,7 +62,3 @@ describe("function", () => {
 		);
 	});
 });
-
-function input(s: string): ParserInput {
-	return { source: s, index: 0 };
-}
