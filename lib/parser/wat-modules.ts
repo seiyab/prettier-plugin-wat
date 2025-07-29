@@ -12,7 +12,6 @@ import {
 	do_,
 	many,
 } from "./p";
-import { spaces } from "./wat-misc";
 import { identifier, Identifier } from "./wat-values";
 import { valtype, ValueType } from "./wat-types";
 import { Instruction, variableInstruction } from "./wat-instructions";
@@ -51,12 +50,9 @@ export function program(input: ParserInput): ParserOutput<Program> {
 export type Module = { type: "Module"; id?: Node<Identifier> };
 export const module_: Parser<Module | Fail> = do_(($) => {
 	void $(literal("("));
-	void $(spaces);
 	void $(literal("module"));
-	void $(spaces);
 	const id = $(parser(identifier).opt());
 	// TODO: modulefields
-	void $(spaces);
 	void $(literal(")"));
 	return { type: "Module", id: id.type !== "None" ? id : undefined };
 });
@@ -64,13 +60,9 @@ export const module_: Parser<Module | Fail> = do_(($) => {
 type Param = { type: "Param"; id?: Node<Identifier>; v: Node<ValueType> };
 const param: Parser<Param | Fail> = do_(($) => {
 	void $(literal("("));
-	void $(spaces);
 	void $(literal("param"));
-	void $(spaces);
 	const id = $(parser(identifier).opt());
-	void $(spaces);
 	const v = $(valtype);
-	void $(spaces);
 	void $(literal(")"));
 	return { type: "Param", id: id.type === "None" ? undefined : id, v };
 });
@@ -78,13 +70,9 @@ const param: Parser<Param | Fail> = do_(($) => {
 type Local = { type: "Local"; id?: Node<Identifier>; v: Node<ValueType> };
 const local: Parser<Local | Fail> = do_(($) => {
 	void $(literal("("));
-	void $(spaces);
 	void $(literal("local"));
-	void $(spaces);
 	const id = $(parser(identifier).opt());
-	void $(spaces);
 	const v = $(valtype);
-	void $(spaces);
 	void $(literal(")"));
 	return { type: "Local", id: id.type === "None" ? undefined : id, v };
 });
@@ -92,11 +80,8 @@ const local: Parser<Local | Fail> = do_(($) => {
 type Result = { type: "Result"; v: Node<ValueType> };
 const result: Parser<Result | Fail> = do_(($) => {
 	void $(literal("("));
-	void $(spaces);
 	void $(literal("result"));
-	void $(spaces);
 	const v = $(valtype);
-	void $(spaces);
 	void $(literal(")"));
 	return { type: "Result", v };
 });
@@ -111,49 +96,12 @@ export type Function = {
 };
 export const function_: Parser<Function | Fail> = do_(($) => {
 	void $(literal("("));
-	void $(spaces);
 	void $(literal("func"));
-	void $(spaces);
 	const id = $(parser(identifier).opt());
-	void $(spaces);
-	const params = $(
-		many(
-			do_(($) => {
-				const p = $(param);
-				void $(spaces);
-				return p;
-			}),
-		),
-	).nodes;
-	const locals = $(
-		many(
-			do_(($) => {
-				const p = $(local);
-				void $(parser(spaces).opt());
-				return p;
-			}),
-		),
-	).nodes;
-	const results = $(
-		many(
-			do_(($) => {
-				const p = $(result);
-				void $(spaces);
-				return p;
-			}),
-		),
-	).nodes;
-	void $(spaces);
-	const instructions = $(
-		many(
-			do_(($) => {
-				const instr = $(variableInstruction);
-				void $(spaces);
-				return instr;
-			}),
-		),
-	);
-	void $(spaces);
+	const params = $(many(do_(($) => $(param)))).nodes;
+	const locals = $(many(do_(($) => $(local)))).nodes;
+	const results = $(many(do_(($) => $(result)))).nodes;
+	const instructions = $(many(do_(($) => $(variableInstruction)))).nodes;
 	void $(literal(")"));
 	return {
 		type: "Function",
@@ -161,6 +109,6 @@ export const function_: Parser<Function | Fail> = do_(($) => {
 		params,
 		locals,
 		results,
-		instructions: instructions.nodes,
+		instructions,
 	};
 });

@@ -2,6 +2,8 @@
  * This file provides domain-inspecific parser implementation &  utilities
  */
 
+import { spaces } from "./wat-lexical-format";
+
 export type ParserInput = { source: string; index: number };
 export type ParserOutput<T extends Typed> = { node: T; nextInput: ParserInput };
 export type ParserFunc<T extends Typed> = (i: ParserInput) => ParserOutput<T>;
@@ -76,7 +78,8 @@ export function do_<T extends Typed>(
 
 	return parser(p);
 	function p(input: ParserInput): ParserOutput<T | Fail> {
-		let currentInput = input;
+		const skip = spaces(input);
+		let currentInput = skip.nextInput;
 
 		try {
 			const node = process($);
@@ -93,6 +96,8 @@ export function do_<T extends Typed>(
 		): Node<Exclude<S, Fail>> {
 			const out = parser(p).parse(currentInput);
 			currentInput = out.nextInput;
+			const skip = spaces(currentInput);
+			currentInput = skip.nextInput;
 			if (isSuccess(out)) return out.node;
 			throw new Interrupt();
 		}
