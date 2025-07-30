@@ -1,6 +1,6 @@
 import { literal, Node, Parser, do_, many, opt, eof } from "./p";
 import { identifier, Identifier } from "./wat-values";
-import { valtype, ValueType } from "./wat-types";
+import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
 import { Instruction, variableInstruction } from "./wat-instructions";
 
 export type ModuleNodes = Program | Module | Function;
@@ -27,16 +27,6 @@ export const module_: Parser<Module> = do_(($) => {
 	return { type: "Module", id: id.type !== "None" ? id : undefined };
 });
 
-type Param = { type: "Param"; id?: Node<Identifier>; v: Node<ValueType> };
-const param: Parser<Param> = do_(($) => {
-	void $(literal("("));
-	void $(literal("param"));
-	const id = $(opt(identifier));
-	const v = $(valtype);
-	void $(literal(")"));
-	return { type: "Param", id: id.type === "None" ? undefined : id, v };
-});
-
 type Local = { type: "Local"; id?: Node<Identifier>; v: Node<ValueType> };
 const local: Parser<Local> = do_(($) => {
 	void $(literal("("));
@@ -45,15 +35,6 @@ const local: Parser<Local> = do_(($) => {
 	const v = $(valtype);
 	void $(literal(")"));
 	return { type: "Local", id: id.type === "None" ? undefined : id, v };
-});
-
-type Result = { type: "Result"; v: Node<ValueType> };
-const result: Parser<Result> = do_(($) => {
-	void $(literal("("));
-	void $(literal("result"));
-	const v = $(valtype);
-	void $(literal(")"));
-	return { type: "Result", v };
 });
 
 export type Function = {
