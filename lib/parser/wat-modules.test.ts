@@ -38,6 +38,7 @@ describe("function", () => {
 					o({ type: "Param", v: o({ type: "ValueType", value: "i32" }) }),
 					o({ type: "Param", v: o({ type: "ValueType", value: "f32" }) }),
 				],
+				results: [],
 				locals: [
 					o({ type: "Local", v: o({ type: "ValueType", value: "f64" }) }),
 				],
@@ -45,18 +46,66 @@ describe("function", () => {
 					o({
 						type: "VariableInstruction",
 						op: "local.get",
-						index: o({ type: "Index", value: 0 }),
+						index: o({ type: "U32", value: 0 }),
 					}),
 					o({
 						type: "VariableInstruction",
 						op: "local.get",
-						index: o({ type: "Index", value: 1 }),
+						index: o({ type: "U32", value: 1 }),
 					}),
 					o({
 						type: "VariableInstruction",
 						op: "local.get",
-						index: o({ type: "Index", value: 2 }),
+						index: o({ type: "U32", value: 2 }),
 					}),
+				],
+			}),
+		);
+	});
+
+	test("$add", () => {
+		const out = check(
+			function_.parse(
+				input(
+					`(func $add (param $lhs i32) (param $rhs i32) (result i32)
+						local.get $lhs
+						local.get $rhs
+						i32.add)`,
+				),
+			),
+		);
+		expect(out.node).toEqual(
+			o({
+				type: "Function",
+				id: o({ type: "Identifier", value: "$add" }),
+				params: [
+					o({
+						type: "Param",
+						id: o({ type: "Identifier", value: "$lhs" }),
+						v: o({ type: "ValueType", value: "i32" }),
+					}),
+					o({
+						type: "Param",
+						id: o({ type: "Identifier", value: "$rhs" }),
+						v: o({ type: "ValueType", value: "i32" }),
+					}),
+				],
+				results: [
+					o({ type: "Result", v: o({ type: "ValueType", value: "i32" }) }),
+				],
+				locals: [],
+				instructions: [
+					o({
+						type: "VariableInstruction",
+						op: "local.get",
+						index: o({ type: "Identifier", value: "$lhs" }),
+					}),
+					o({
+						type: "VariableInstruction",
+						op: "local.get",
+						index: o({ type: "Identifier", value: "$rhs" }),
+					}),
+					o({ type: "NumericInstruction", op: "i32.add" }),
 				],
 			}),
 		);

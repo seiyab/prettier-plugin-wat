@@ -1,7 +1,7 @@
 import { literal, Node, Parser, do_, many, opt, eof } from "./p";
 import { identifier, Identifier } from "./wat-values";
 import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
-import { Instruction, variableInstruction } from "./wat-instructions";
+import { Instruction, instruction } from "./wat-instructions";
 
 export type ModuleNodes = Program | Module | Function;
 
@@ -50,9 +50,9 @@ export const function_: Parser<Function> = do_(($) => {
 	void $(literal("func"));
 	const id = $(opt(identifier));
 	const params = $(many(do_(($) => $(param)))).nodes;
-	const locals = $(many(do_(($) => $(local)))).nodes;
 	const results = $(many(do_(($) => $(result)))).nodes;
-	const instructions = $(many(do_(($) => $(variableInstruction)))).nodes;
+	const locals = $(many(do_(($) => $(local)))).nodes;
+	const instructions = $(many(do_(($) => $(instruction)))).nodes;
 	void $(literal(")"));
 	return {
 		type: "Function",

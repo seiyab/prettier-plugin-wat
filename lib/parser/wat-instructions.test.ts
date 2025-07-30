@@ -11,7 +11,7 @@ describe("local.get", () => {
 			o({
 				type: "VariableInstruction",
 				op: "local.get",
-				index: o({ type: "Index", value: 0 }),
+				index: o({ type: "U32", value: 0 }),
 			}),
 		);
 	});

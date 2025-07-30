@@ -1,7 +1,7 @@
 import { do_, literal, Node, oneOf, Parser } from "./p";
-import { Index, u32 } from "./wat-values";
+import { Index, index } from "./wat-values";
 
-export type Instruction = VariableInstruction;
+export type Instruction = VariableInstruction | NumericInstruction;
 
 export type VariableInstruction = {
 	type: "VariableInstruction";
@@ -16,6 +16,22 @@ export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 			),
 		),
 	).value as VariableInstruction["op"];
-	const index = $(u32);
-	return { type: "VariableInstruction", op, index };
+	const idx = $<Index>(index);
+	return { type: "VariableInstruction", op, index: idx };
 });
+
+export type NumericInstruction = {
+	type: "NumericInstruction";
+	op: string;
+	args?: []; // TODO
+};
+
+export const numericInstruction: Parser<NumericInstruction> = do_(($) => {
+	const op = $(literal("i32.add")).value;
+	return { type: "NumericInstruction", op };
+});
+
+export const instruction: Parser<Instruction> = oneOf<Instruction>([
+	variableInstruction,
+	numericInstruction,
+]);

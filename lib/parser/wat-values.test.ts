@@ -13,7 +13,7 @@ describe("u32", () => {
 	test("123", () => {
 		const out = check(u32.parse(input("123")));
 		expect(out.node).toEqual(
-			expect.objectContaining({ type: "Index", value: 123 }),
+			expect.objectContaining({ type: "U32", value: 123 }),
 		);
 	});
 });

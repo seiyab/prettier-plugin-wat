@@ -1,9 +1,9 @@
-import { parser, Parser, ParserInput, ParserOutput } from "./p";
+import { parser, Parser, ParserInput, ParserOutput, oneOf } from "./p";
 
-export type ValueNodes = Identifier | Index;
+export type ValueNodes = Identifier | U32;
 
-export type Index = { type: "Index"; value: number };
-export const u32: Parser<Index> = parser((input): ParserOutput<Index> => {
+export type U32 = { type: "U32"; value: number };
+export const u32: Parser<U32> = parser((input): ParserOutput<U32> => {
 	const { source, index } = input;
 	let i = index;
 	while (i < source.length && source[i] >= "0" && source[i] <= "9") {
@@ -11,7 +11,7 @@ export const u32: Parser<Index> = parser((input): ParserOutput<Index> => {
 	}
 	if (i === index) return new Error();
 	const value = parseInt(source.substring(index, i), 10);
-	return { node: { type: "Index", value }, nextInput: { source, index: i } };
+	return { node: { type: "U32", value }, nextInput: { source, index: i } };
 });
 
 export type Identifier = { type: "Identifier"; value: string };
@@ -37,3 +37,6 @@ const idchars = new Set(
 		// TODO: add valid non-alphanumeric characters
 	].flat(),
 );
+
+export type Index = U32 | Identifier;
+export const index: Parser<Index> = oneOf<Index>([u32, identifier]);
