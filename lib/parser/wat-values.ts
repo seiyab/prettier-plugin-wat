@@ -40,3 +40,21 @@ const idchars = new Set(
 
 export type Index = U32 | Identifier;
 export const index: Parser<Index> = oneOf<Index>([u32, identifier]);
+
+export type StringLiteral = { type: "StringLiteral"; value: string };
+export const stringLiteral: Parser<StringLiteral> = parser(
+	(input): ParserOutput<StringLiteral> => {
+		const { source, index } = input;
+		if (source[index] !== '"') return new Error('Expected "');
+		let i = index + 1;
+		while (i < source.length && source[i] !== '"') {
+			i++;
+		}
+		if (source[i] !== '"') return new Error("Unterminated string literal");
+		const value = source.substring(index + 1, i);
+		return {
+			node: { type: "StringLiteral", value },
+			nextInput: { source, index: i + 1 },
+		};
+	},
+);

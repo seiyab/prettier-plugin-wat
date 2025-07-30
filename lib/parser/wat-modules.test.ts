@@ -16,6 +16,25 @@ describe("module", () => {
 			o({ type: "Module", id: o({ type: "Identifier", value: "$myModule" }) }),
 		);
 	});
+
+	test("export", () => {
+		const out = check(module_.parse(input(`(module (export "f" (func $f)))`)));
+		expect(out.node).toEqual(
+			o({
+				type: "Module",
+				exports: [
+					o({
+						type: "Export",
+						name: o({ type: "StringLiteral", value: "f" }),
+						exportdesc: o({
+							type: "FuncExport",
+							index: o({ type: "Identifier", value: "$f" }),
+						}),
+					}),
+				],
+			}),
+		);
+	});
 });
 
 describe("function", () => {
@@ -77,35 +96,17 @@ describe("function", () => {
 		expect(out.node).toEqual(
 			o({
 				type: "Function",
-				id: o({ type: "Identifier", value: "$add" }),
+				id: o({ value: "$add" }),
 				params: [
-					o({
-						type: "Param",
-						id: o({ type: "Identifier", value: "$lhs" }),
-						v: o({ type: "ValueType", value: "i32" }),
-					}),
-					o({
-						type: "Param",
-						id: o({ type: "Identifier", value: "$rhs" }),
-						v: o({ type: "ValueType", value: "i32" }),
-					}),
+					o({ id: o({ value: "$lhs" }) }),
+					o({ id: o({ value: "$rhs" }) }),
 				],
-				results: [
-					o({ type: "Result", v: o({ type: "ValueType", value: "i32" }) }),
-				],
+				results: [o({ v: o({ value: "i32" }) })],
 				locals: [],
 				instructions: [
-					o({
-						type: "VariableInstruction",
-						op: "local.get",
-						index: o({ type: "Identifier", value: "$lhs" }),
-					}),
-					o({
-						type: "VariableInstruction",
-						op: "local.get",
-						index: o({ type: "Identifier", value: "$rhs" }),
-					}),
-					o({ type: "NumericInstruction", op: "i32.add" }),
+					o({ op: "local.get", index: o({ value: "$lhs" }) }),
+					o({ op: "local.get", index: o({ value: "$rhs" }) }),
+					o({ op: "i32.add", type: "NumericInstruction" }),
 				],
 			}),
 		);

@@ -1,5 +1,12 @@
 import { literal, Node, Parser, do_, many, opt, eof } from "./p";
-import { identifier, Identifier } from "./wat-values";
+import {
+	identifier,
+	Identifier,
+	index,
+	Index,
+	stringLiteral,
+	StringLiteral,
+} from "./wat-values";
 import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
 import { Instruction, instruction } from "./wat-instructions";
 
@@ -17,14 +24,43 @@ export const program: Parser<Program> = do_(($) => {
 	return { type: "Program", body };
 });
 
-export type Module = { type: "Module"; id?: Node<Identifier> };
+export type Export = {
+	type: "Export";
+	name: Node<StringLiteral>;
+	exportdesc: Node<ExportDesc>;
+};
+export type ExportDesc = FuncExport;
+export type FuncExport = { type: "FuncExport"; index: Node<Index> };
+export const export_: Parser<Export> = do_(($) => {
+	void $(literal("("));
+	void $(literal("export"));
+	const name = $(stringLiteral);
+	const exportdesc = $(
+		do_<FuncExport>(($) => {
+			void $(literal("("));
+			void $(literal("func"));
+			const idx = $(index);
+			void $(literal(")"));
+			return { type: "FuncExport", index: idx };
+		}),
+	);
+	void $(literal(")"));
+	return { type: "Export", name, exportdesc };
+});
+
+export type Module = {
+	type: "Module";
+	id?: Node<Identifier>;
+	exports: Node<Export>[];
+};
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
 	const id = $(opt(identifier));
-	// TODO: modulefields
+	const exports = $(many(do_(($) => $(export_)))).nodes;
+	// TODO: other modulefields
 	void $(literal(")"));
-	return { type: "Module", id: id.type !== "None" ? id : undefined };
+	return { type: "Module", id: id.type !== "None" ? id : undefined, exports };
 });
 
 type Local = { type: "Local"; id?: Node<Identifier>; v: Node<ValueType> };
