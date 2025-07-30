@@ -1,4 +1,4 @@
-import { None, ParserInput, ParserOutput } from "./p";
+import { literal, None, oneOf, ParserInput, ParserOutput } from "./p";
 
 export function spaces(input: ParserInput): ParserOutput<None> {
 	let i = input.index;
@@ -9,3 +9,26 @@ export function spaces(input: ParserInput): ParserOutput<None> {
 	return { node: { type: "None" }, nextInput: { ...input, index: i } };
 }
 const spacechars: ReadonlySet<string> = new Set([" ", "\t", "\n", "\r"]);
+
+type Comment = { type: "Comment"; kind: "block" | "line"; content: string };
+export const comment = oneOf([lineComment, blockComment]);
+function lineComment(input: ParserInput): ParserOutput<Comment> {
+	const prefix = literal(";;").parse(input);
+	if (prefix instanceof Error) return prefix;
+	let i = prefix.nextInput.index;
+	while (i < input.source.length && !linebreak(input.source[i])) {
+		i += 1;
+	}
+	const content = input.source.substring(prefix.nextInput.index, i);
+	return {
+		node: { type: "Comment", kind: "line", content },
+		nextInput: { ...input, index: i },
+	};
+}
+function blockComment(input: ParserInput): ParserOutput<Comment> {
+	return new Error("not implemented");
+}
+
+function linebreak(c: string): boolean {
+	return c === "\n" || c === "\r";
+}
