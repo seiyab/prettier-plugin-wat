@@ -29,23 +29,25 @@ export type Export = {
 	name: Node<StringLiteral>;
 	exportdesc: Node<ExportDesc>;
 };
-export type ExportDesc = FuncExport;
-export type FuncExport = { type: "FuncExport"; index: Node<Index> };
 export const export_: Parser<Export> = do_(($) => {
 	void $(literal("("));
 	void $(literal("export"));
 	const name = $(stringLiteral);
-	const exportdesc = $(
-		do_<FuncExport>(($) => {
-			void $(literal("("));
-			void $(literal("func"));
-			const idx = $(index);
-			void $(literal(")"));
-			return { type: "FuncExport", index: idx };
-		}),
-	);
+	const ed = $(exportdesc);
 	void $(literal(")"));
-	return { type: "Export", name, exportdesc };
+	return { type: "Export", name, exportdesc: ed };
+});
+export type ExportDesc = {
+	type: "ExportDesc";
+	kind: "func" | "table" | "memory" | "global";
+	index: Node<Index>;
+};
+const exportdesc = do_(($): ExportDesc => {
+	void $(literal("("));
+	const kind = $(literal("func")).value as ExportDesc["kind"];
+	const idx = $(index);
+	void $(literal(")"));
+	return { type: "ExportDesc", kind, index: idx };
 });
 
 export type Module = {
