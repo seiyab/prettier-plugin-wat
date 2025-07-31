@@ -26,7 +26,23 @@ function lineComment(input: ParserInput): ParserOutput<Comment> {
 	};
 }
 function blockComment(input: ParserInput): ParserOutput<Comment> {
-	return new Error("not implemented");
+	const prefix = literal("(;").parse(input);
+	if (prefix instanceof Error) return prefix;
+
+	const startIndex = prefix.nextInput.index;
+	const endIndex = input.source.indexOf(";)", startIndex);
+
+	if (endIndex === -1) {
+		return new Error("unclosed block comment");
+	}
+
+	const content = input.source.substring(startIndex, endIndex);
+	const nextIndex = endIndex + 2;
+
+	return {
+		node: { type: "Comment", kind: "block", content },
+		nextInput: { ...input, index: nextIndex },
+	};
 }
 
 function linebreak(c: string): boolean {

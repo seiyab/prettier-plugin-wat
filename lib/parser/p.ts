@@ -81,6 +81,7 @@ export function do_<T extends Typed>(
 		}
 	}
 }
+do_.dense = function dense() {};
 
 type Literal = { type: "Literal"; value: string };
 export function literal(s: string): Parser<Literal> {

@@ -1,3 +1,4 @@
+import { expect } from "vitest";
 import { ParserInput } from "./p";
 
 export function check<T>(v: T | Error): T {
@@ -7,4 +8,8 @@ export function check<T>(v: T | Error): T {
 
 export function input(s: string): ParserInput {
 	return { source: s, index: 0 };
+}
+
+export function o(u: object): unknown {
+	return expect.objectContaining(u);
 }
