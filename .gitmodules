@@ -7,3 +7,6 @@
 [submodule "references/prettier-plugin-sort-members"]
 	path = references/prettier-plugin-sort-members
 	url = git@github.com:seiyab/prettier-plugin-sort-members.git
+[submodule "references/wasm-wat-samples"]
+	path = references/wasm-wat-samples
+	url = git@github.com:eliben/wasm-wat-samples.git
