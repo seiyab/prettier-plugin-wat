@@ -2,7 +2,7 @@
  * This file provides domain-inspecific parser implementation &  utilities
  */
 
-import { spaces } from "./wat-lexical-format";
+import { spaces, Comment, comment } from "./wat-lexical-format";
 
 export type ParserInput = { source: string; index: number };
 export type ParserOutput<T extends Typed> =
@@ -14,7 +14,7 @@ export type Parser<T extends Typed> = { parse: ParserFunc<Node<T>> };
 
 type Location = { start: { offset: number }; end: { offset: number } };
 
-export type Node<T extends Typed> = T & { loc: Location };
+export type Node<T extends Typed> = T & { loc: Location; comments?: Comment[] };
 type Typed = { type: string };
 
 export type Unknown = { type: "Unknown"; value: string };
@@ -48,6 +48,31 @@ function location(loc: { start: number; end: number }): Location {
 export function do_<T extends Typed>(
 	process: ($: <S extends Typed>(p: Parser<S> | ParserFunc<S>) => Node<S>) => T,
 ): Parser<T> {
+	return do_.dense(($) => {
+		const comments: Node<Comment>[] = [];
+
+		const gap = do_.dense(($) => {
+			void $(opt(spaces));
+			for (;;) {
+				const c = $(opt(comment));
+				if (c.type === "None") break;
+				comments.push(c);
+				void $(spaces);
+			}
+			return { type: "None" };
+		});
+
+		const out = process((p) => {
+			void $(gap);
+			return $(p);
+		});
+		void $(spaces);
+		return { ...out, comments };
+	});
+}
+do_.dense = function dense<T extends Typed>(
+	process: ($: <S extends Typed>(p: Parser<S> | ParserFunc<S>) => Node<S>) => T,
+): Parser<T> {
 	class Interrupt extends Error {
 		cause: Error;
 		constructor(cause: Error) {
@@ -58,8 +83,7 @@ export function do_<T extends Typed>(
 
 	return parser(p);
 	function p(input: ParserInput): ParserOutput<T> {
-		const skip = spaces(input);
-		let currentInput = skip instanceof Error ? input : skip.nextInput;
+		let currentInput = input;
 
 		try {
 			const node = process($);
@@ -73,15 +97,10 @@ export function do_<T extends Typed>(
 			const out = parser(p).parse(currentInput);
 			if (out instanceof Error) throw new Interrupt(out);
 			currentInput = out.nextInput;
-			const skip = spaces(currentInput);
-			if (!(skip instanceof Error)) {
-				currentInput = skip.nextInput;
-			}
 			return out.node;
 		}
 	}
-}
-do_.dense = function dense() {};
+};
 
 type Literal = { type: "Literal"; value: string };
 export function literal(s: string): Parser<Literal> {

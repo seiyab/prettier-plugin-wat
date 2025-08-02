@@ -112,4 +112,43 @@ describe("function", () => {
 			}),
 		);
 	});
+
+	test("comments", () => {
+		const out = check(
+			function_.parse(
+				input(
+					`(func $add (; comment 1 ;) (param $lhs i32) (param $rhs i32) (result i32)
+						local.get $lhs
+						local.get $rhs ;; comment 2
+						i32.add)`,
+				),
+			),
+		);
+		expect(out.node).toEqual(
+			o({
+				type: "Function",
+				id: o({ value: "$add" }),
+				params: [
+					o({ id: o({ value: "$lhs" }) }),
+					o({ id: o({ value: "$rhs" }) }),
+				],
+				results: [o({ v: o({ value: "i32" }) })],
+				locals: [],
+				instructions: [
+					o({ op: "local.get", index: o({ value: "$lhs" }) }),
+					o({ op: "local.get", index: o({ value: "$rhs" }) }),
+					o({
+						op: "i32.add",
+						type: "NumericInstruction",
+						comments: [
+							o({ type: "Comment", kind: "line", content: " comment 2" }),
+						],
+					}),
+				],
+				comments: [
+					o({ type: "Comment", kind: "block", content: " comment 1 " }),
+				],
+			}),
+		);
+	});
 });

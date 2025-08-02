@@ -10,7 +10,11 @@ export function spaces(input: ParserInput): ParserOutput<None> {
 }
 const spacechars: ReadonlySet<string> = new Set([" ", "\t", "\n", "\r"]);
 
-type Comment = { type: "Comment"; kind: "block" | "line"; content: string };
+export type Comment = {
+	type: "Comment";
+	kind: "block" | "line";
+	content: string;
+};
 export const comment = oneOf([lineComment, blockComment]);
 function lineComment(input: ParserInput): ParserOutput<Comment> {
 	const prefix = literal(";;").parse(input);
