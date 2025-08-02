@@ -45,9 +45,12 @@ function location(loc: { start: number; end: number }): Location {
 	return { start: { offset: loc.start }, end: { offset: loc.end } };
 }
 
-export function do_<T extends Typed>(
-	process: ($: <S extends Typed>(p: Parser<S> | ParserFunc<S>) => Node<S>) => T,
-): Parser<T> {
+type Tools = {
+	<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S>;
+	peek: (p: Parser<Typed> | ParserFunc<Typed>) => boolean;
+};
+
+export function do_<T extends Typed>(process: ($: Tools) => T): Parser<T> {
 	return do_.dense(($) => {
 		const comments: Node<Comment>[] = [];
 
@@ -62,16 +65,26 @@ export function do_<T extends Typed>(
 			return { type: "None" };
 		});
 
-		const out = process((p) => {
-			void $(gap);
-			return $(p);
-		});
+		const out = process(
+			Object.assign(
+				<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> => {
+					void $(gap);
+					return $(p);
+				},
+				{
+					peek: (p: Parser<Typed> | ParserFunc<Typed>) => {
+						void $(gap);
+						return $.peek(p);
+					},
+				},
+			),
+		);
 		void $(spaces);
 		return { ...out, comments };
 	});
 }
 do_.dense = function dense<T extends Typed>(
-	process: ($: <S extends Typed>(p: Parser<S> | ParserFunc<S>) => Node<S>) => T,
+	process: ($: Tools) => T,
 ): Parser<T> {
 	class Interrupt extends Error {
 		cause: Error;
@@ -84,6 +97,11 @@ do_.dense = function dense<T extends Typed>(
 	return parser(p);
 	function p(input: ParserInput): ParserOutput<T> {
 		let currentInput = input;
+
+		$.peek = (p: Parser<Typed> | ParserFunc<Typed>): boolean => {
+			const out = parser(p).parse(currentInput);
+			return !(out instanceof Error);
+		};
 
 		try {
 			const node = process($);
@@ -112,7 +130,9 @@ export function literal(s: string): Parser<Literal> {
 				node: { type: "Literal", value: s },
 				nextInput: { source, index: index + s.length },
 			};
-		return new Error();
+		return new Error(
+			`expected ${s}, but got ${source.substring(index, index + s.length)}`,
+		);
 	}
 }
 
@@ -130,12 +150,16 @@ export function oneOf<T extends Typed>(
 ): Parser<T> {
 	return parser(parse);
 	function parse(input: ParserInput): ParserOutput<T> {
+		let firstError: Error | undefined;
 		for (const p of parsers) {
 			const out = parser(p).parse(input);
-			if (out instanceof Error) continue;
+			if (out instanceof Error) {
+				if (firstError === undefined) firstError = out;
+				continue;
+			}
 			return out;
 		}
-		return new Error();
+		return firstError ?? new Error();
 	}
 }
 

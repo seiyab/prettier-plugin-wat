@@ -22,7 +22,7 @@ describe("module", () => {
 		expect(out.node).toEqual(
 			o({
 				type: "Module",
-				exports: [
+				modulefields: [
 					o({
 						type: "Export",
 						name: o({ type: "StringLiteral", value: "f" }),

@@ -1,4 +1,4 @@
-import { literal, Node, Parser, do_, many, opt, eof } from "./p";
+import { literal, Node, Parser, do_, many, opt, eof, oneOf } from "./p";
 import {
 	identifier,
 	Identifier,
@@ -16,8 +16,8 @@ export type Program = { type: "Program"; body: Node<Module>[] };
 export const program: Parser<Program> = do_(($) => {
 	const body: Node<Module>[] = [];
 	for (;;) {
-		const m = $(opt(module_));
-		if (m.type === "None") break;
+		if (!$.peek(literal("("))) break;
+		const m = $(module_);
 		body.push(m);
 	}
 	void $(eof);
@@ -53,16 +53,25 @@ const exportdesc = do_(($): ExportDesc => {
 export type Module = {
 	type: "Module";
 	id?: Node<Identifier>;
-	exports: Node<Export>[];
+	modulefields: Node<ModuleField>[];
 };
+// TODO: other modulefields
+type ModuleField = Export | Function;
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
 	const id = $(opt(identifier));
-	const exports = $(many(do_(($) => $(export_)))).nodes;
-	// TODO: other modulefields
+	const modulefields: Node<ModuleField>[] = [];
+	for (;;) {
+		if (!$.peek(literal("("))) break;
+		modulefields.push($(oneOf<ModuleField>([export_, function_])));
+	}
 	void $(literal(")"));
-	return { type: "Module", id: id.type !== "None" ? id : undefined, exports };
+	return {
+		type: "Module",
+		id: id.type !== "None" ? id : undefined,
+		modulefields,
+	};
 });
 
 type Local = { type: "Local"; id?: Node<Identifier>; v: Node<ValueType> };
