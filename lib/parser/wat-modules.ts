@@ -87,6 +87,7 @@ const local: Parser<Local> = do_(($) => {
 export type Function = {
 	type: "Function";
 	id?: Node<Identifier>;
+	export_?: Node<InlineExport>;
 	params: Node<Param>[];
 	locals: Node<Local>[];
 	results: Node<Result>[];
@@ -96,6 +97,7 @@ export const function_: Parser<Function> = do_(($) => {
 	void $(literal("("));
 	void $(literal("func"));
 	const id = $(opt(identifier));
+	const expt = $(opt(inlineExport));
 	const params = $(many(do_(($) => $(param)))).nodes;
 	const results = $(many(do_(($) => $(result)))).nodes;
 	const locals = $(many(do_(($) => $(local)))).nodes;
@@ -104,9 +106,18 @@ export const function_: Parser<Function> = do_(($) => {
 	return {
 		type: "Function",
 		id: id.type === "None" ? undefined : id,
+		export_: expt.type === "None" ? undefined : expt,
 		params,
 		locals,
 		results,
 		instructions,
 	};
+});
+type InlineExport = { type: "InlineExport"; name: StringLiteral };
+const inlineExport: Parser<InlineExport> = do_(($) => {
+	void $(literal("("));
+	void $(literal("export"));
+	const name = $(stringLiteral);
+	void $(literal(")"));
+	return { type: "InlineExport", name };
 });

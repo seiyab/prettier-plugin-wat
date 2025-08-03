@@ -1,7 +1,7 @@
-import { do_, literal, Node, oneOf, Parser } from "./p";
+import { do_, literal, many, Node, oneOf, Parser } from "./p";
 import { Index, index } from "./wat-values";
 
-export type Instruction = VariableInstruction | NumericInstruction;
+export type Instruction = PlainInstruction | FoldedInstruction;
 
 export type VariableInstruction = {
 	type: "VariableInstruction";
@@ -20,18 +20,35 @@ export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 	return { type: "VariableInstruction", op, index: idx };
 });
 
-export type NumericInstruction = {
-	type: "NumericInstruction";
-	op: string;
-	args?: []; // TODO
-};
+export type NumericInstruction = { type: "NumericInstruction"; op: string };
 
 export const numericInstruction: Parser<NumericInstruction> = do_(($) => {
 	const op = $(literal("i32.add")).value;
 	return { type: "NumericInstruction", op };
 });
 
-export const instruction: Parser<Instruction> = oneOf<Instruction>([
-	variableInstruction,
-	numericInstruction,
-]);
+type PlainInstruction = VariableInstruction | NumericInstruction;
+export const plainInstruction: Parser<PlainInstruction> =
+	oneOf<PlainInstruction>([variableInstruction, numericInstruction]);
+
+export const instruction: Parser<Instruction> = do_(($) =>
+	$(oneOf<Instruction>([plainInstruction, foldedInstrucion])),
+);
+
+export type FoldedInstruction = FoldedPlainInstruction;
+export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) =>
+	$(oneOf<FoldedInstruction>([foldedPlainInstruction])),
+);
+
+type FoldedPlainInstruction = {
+	type: "FoldedPlainInstruction";
+	operator: Node<PlainInstruction>;
+	operands: Node<FoldedInstruction>[];
+};
+const foldedPlainInstruction: Parser<FoldedPlainInstruction> = do_(($) => {
+	void $(literal("("));
+	const operator = $(plainInstruction);
+	const operands = $(many(foldedInstrucion)).nodes;
+	void $(literal(")"));
+	return { type: "FoldedPlainInstruction", operator, operands };
+});

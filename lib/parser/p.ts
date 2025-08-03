@@ -146,7 +146,9 @@ do_.dense = function dense<T extends Typed>(
 
 		function $<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> {
 			const out = parser(p).parse(currentInput);
-			if (out instanceof Error) throw new Interrupt(out);
+			if (out instanceof ParseError) throw new Interrupt(out);
+			if (out instanceof Error)
+				throw new Interrupt(new ParseError(out, currentInput));
 			currentInput = out.nextInput;
 			return out.node;
 		}
