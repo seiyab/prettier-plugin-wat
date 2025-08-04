@@ -1,7 +1,7 @@
 import { do_, literal, many, Node, oneOf, Parser } from "./p";
 import { Index, index } from "./wat-values";
 
-export type Instruction = PlainInstruction | FoldedInstruction;
+export type InstructionNode = PlainInstruction | FoldedInstruction;
 
 export type VariableInstruction = {
 	type: "VariableInstruction";
@@ -31,8 +31,8 @@ type PlainInstruction = VariableInstruction | NumericInstruction;
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([variableInstruction, numericInstruction]);
 
-export const instruction: Parser<Instruction> = do_(($) =>
-	$(oneOf<Instruction>([plainInstruction, foldedInstrucion])),
+export const instruction: Parser<InstructionNode> = do_(($) =>
+	$(oneOf<InstructionNode>([plainInstruction, foldedInstrucion])),
 );
 
 export type FoldedInstruction = FoldedPlainInstruction;

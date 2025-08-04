@@ -113,7 +113,7 @@ export function do_<T extends Typed>(process: ($: Tools) => T): Parser<T> {
 			),
 		);
 		void $(spaces);
-		return { ...out, comments };
+		return { ...out, comments: comments };
 	});
 }
 do_.dense = function dense<T extends Typed>(

@@ -1,6 +1,6 @@
 import { parser, Parser, ParserInput, ParserOutput, oneOf } from "./p";
 
-export type ValueNodes = Identifier | U32;
+export type ValueNodes = Identifier | U32 | StringLiteral;
 
 export type U32 = { type: "U32"; value: number };
 export const u32: Parser<U32> = parser((input): ParserOutput<U32> => {

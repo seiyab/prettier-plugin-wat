@@ -8,9 +8,10 @@ import {
 	StringLiteral,
 } from "./wat-values";
 import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
-import { Instruction, instruction } from "./wat-instructions";
+import { InstructionNode, instruction } from "./wat-instructions";
 
 export type ModuleNodes = Program | Module | Function;
+export type ModuleElement = FunctionElement;
 
 export type Program = { type: "Program"; body: Node<Module>[] };
 export const program: Parser<Program> = do_(($) => {
@@ -91,7 +92,7 @@ export type Function = {
 	params: Node<Param>[];
 	locals: Node<Local>[];
 	results: Node<Result>[];
-	instructions: Node<Instruction>[];
+	instructions: Node<InstructionNode>[];
 };
 export const function_: Parser<Function> = do_(($) => {
 	void $(literal("("));
@@ -113,6 +114,7 @@ export const function_: Parser<Function> = do_(($) => {
 		instructions,
 	};
 });
+type FunctionElement = InlineExport;
 type InlineExport = { type: "InlineExport"; name: StringLiteral };
 const inlineExport: Parser<InlineExport> = do_(($) => {
 	void $(literal("("));
