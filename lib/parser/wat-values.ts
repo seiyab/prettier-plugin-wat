@@ -1,9 +1,9 @@
 import { parser, Parser, ParserInput, ParserOutput, oneOf } from "./p";
 
-export type ValueNodes = Identifier | U32 | StringLiteral;
+export type ValueNodes = Identifier | UInteger | StringLiteral;
 
-export type U32 = { type: "U32"; value: number };
-export const u32: Parser<U32> = parser((input): ParserOutput<U32> => {
+export type UInteger = { type: "UInteger"; value: number };
+export const u32: Parser<UInteger> = parser((input): ParserOutput<UInteger> => {
 	const { source, index } = input;
 	let i = index;
 	while (i < source.length && source[i] >= "0" && source[i] <= "9") {
@@ -11,7 +11,7 @@ export const u32: Parser<U32> = parser((input): ParserOutput<U32> => {
 	}
 	if (i === index) return new Error();
 	const value = parseInt(source.substring(index, i), 10);
-	return { node: { type: "U32", value }, nextInput: { source, index: i } };
+	return { node: { type: "UInteger", value }, nextInput: { source, index: i } };
 });
 
 export type Identifier = { type: "Identifier"; value: string };
@@ -38,7 +38,7 @@ const idchars = new Set(
 	].flat(),
 );
 
-export type Index = U32 | Identifier;
+export type Index = UInteger | Identifier;
 export const index: Parser<Index> = oneOf<Index>([u32, identifier]);
 
 export type StringLiteral = { type: "StringLiteral"; value: string };

@@ -66,17 +66,17 @@ describe("function", () => {
 					o({
 						type: "VariableInstruction",
 						op: "local.get",
-						index: o({ type: "U32", value: 0 }),
+						index: o({ type: "UInteger", value: 0 }),
 					}),
 					o({
 						type: "VariableInstruction",
 						op: "local.get",
-						index: o({ type: "U32", value: 1 }),
+						index: o({ type: "UInteger", value: 1 }),
 					}),
 					o({
 						type: "VariableInstruction",
 						op: "local.get",
-						index: o({ type: "U32", value: 2 }),
+						index: o({ type: "UInteger", value: 2 }),
 					}),
 				],
 			}),
