@@ -3,7 +3,11 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as prettier from "prettier";
 
-const files = ["add/add.wat", "add-not-folded/add-not-folded.wat"];
+const files = [
+	"add/add.wat",
+	"add-not-folded/add-not-folded.wat",
+	"if-expr/ifexpr.wat",
+];
 
 const root = path.join(import.meta.dirname, "..");
 const samples = path.join(root, "references", "wasm-wat-samples");
