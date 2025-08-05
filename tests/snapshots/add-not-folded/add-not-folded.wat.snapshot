@@ -1,4 +1,3 @@
-;; add(a, b) returns a+b
 ;; Basic "add" example.
 ;;
 ;; Eli Bendersky [https://eli.thegreenplace.net]

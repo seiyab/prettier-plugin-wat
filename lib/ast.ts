@@ -13,7 +13,7 @@ export function hoistComment(p: WatNode): WatNode {
 				}
 				const n = hoistComment(e);
 				comments.push(...(n.comments ?? []));
-				vs.push(n);
+				vs.push({ ...n, comments: undefined });
 			}
 			// @ts-expect-error -- hard to infer type
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -21,8 +21,9 @@ export function hoistComment(p: WatNode): WatNode {
 		}
 
 		if (!isNode(v)) continue;
+		if (v.type === "Comment") continue;
 		const n = hoistComment(v);
-		comments.push(...(v.comments ?? []));
+		comments.push(...(n.comments ?? []));
 		// @ts-expect-error -- hard to infer type
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		cloned[k] = { ...n, comments: undefined };

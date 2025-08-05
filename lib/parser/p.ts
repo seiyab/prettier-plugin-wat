@@ -88,20 +88,21 @@ export function do_<T extends Typed>(process: ($: Tools) => T): Parser<T> {
 		const comments: Node<Comment>[] = [];
 
 		const gap = do_.dense(($) => {
+			const coms: Node<Comment>[] = [];
 			void $(opt(spaces));
 			for (;;) {
 				const c = $(opt(comment));
 				if (c.type === "None") break;
 				comments.push(c);
-				void $(spaces);
+				void $(opt(spaces));
 			}
-			return { type: "None" };
+			return { type: "None", coms };
 		});
 
 		const out = process(
 			Object.assign(
 				<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> => {
-					void $(gap);
+					comments.push(...$(gap).coms);
 					return $(p);
 				},
 				{
