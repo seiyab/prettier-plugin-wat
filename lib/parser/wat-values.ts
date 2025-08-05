@@ -1,6 +1,6 @@
 import { parser, Parser, ParserInput, ParserOutput, oneOf } from "./p";
 
-export type ValueNodes = Identifier | UInteger | StringLiteral;
+export type ValueNodes = Identifier | UInteger | Integer | StringLiteral;
 
 export type UInteger = { type: "UInteger"; value: number };
 export const u32: Parser<UInteger> = parser((input): ParserOutput<UInteger> => {
@@ -12,6 +12,21 @@ export const u32: Parser<UInteger> = parser((input): ParserOutput<UInteger> => {
 	if (i === index) return new Error();
 	const value = parseInt(source.substring(index, i), 10);
 	return { node: { type: "UInteger", value }, nextInput: { source, index: i } };
+});
+
+export type Integer = { type: "Integer"; value: number };
+export const s32: Parser<Integer> = parser((input): ParserOutput<Integer> => {
+	const { source, index } = input;
+	let i = index;
+	if (source[i] === "+" || source[i] === "-") {
+		i++;
+	}
+	while (i < source.length && source[i] >= "0" && source[i] <= "9") {
+		i++;
+	}
+	if (i === index) return new Error();
+	const value = parseInt(source.substring(index, i), 10);
+	return { node: { type: "Integer", value }, nextInput: { source, index: i } };
 });
 
 export type Identifier = { type: "Identifier"; value: string };
