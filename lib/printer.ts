@@ -2,6 +2,7 @@ import { Doc, doc, Printer } from "prettier";
 import { WatNode } from "./parser/wat";
 import { Print } from "./types";
 import { printFunction } from "./print-function";
+import { printFoldedIfInstruction } from "./print-folded-if-struction";
 
 const { group, indent, softline, hardline, join, line } = doc.builders;
 
@@ -66,37 +67,8 @@ export const print: Printer<WatNode>["print"] = (
 			return [node.op, " ", path.call(print, "val")];
 		case "Comment":
 			throw new Error("should not be reached if printComment is defined");
-		case "FoldedIfInstruction": {
-			const parts: Doc[] = ["(if"];
-			if (node.result) {
-				parts.push(" ", path.call(print, "result"));
-			}
-			if (node.cond.length > 0) {
-				parts.push(indent([line, join(line, path.map(print, "cond"))]));
-			}
-			parts.push(
-				line,
-				group([
-					"(then",
-					indent([line, join(line, path.map(print, "then"))]),
-					line,
-					")",
-				]),
-			);
-			if (node.else) {
-				parts.push(
-					line,
-					group([
-						"(else",
-						indent([line, join(line, path.map(print, "else"))]),
-						line,
-						")",
-					]),
-				);
-			}
-			parts.push(softline, ")");
-			return group(parts);
-		}
+		case "FoldedIfInstruction":
+			return printFoldedIfInstruction(node, path, print);
 		default:
 			throw new Error(`Unknown node type: ${node.type}`);
 	}
