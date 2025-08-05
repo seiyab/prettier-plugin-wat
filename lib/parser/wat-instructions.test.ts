@@ -11,7 +11,7 @@ describe("local.get", () => {
 			o({
 				type: "VariableInstruction",
 				op: "local.get",
-				index: o({ type: "UInteger", value: 0 }),
+				index: o({ type: "UInteger", text: "0" }),
 			}),
 		);
 	});

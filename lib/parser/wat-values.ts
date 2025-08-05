@@ -2,32 +2,41 @@ import { parser, Parser, ParserInput, ParserOutput, oneOf } from "./p";
 
 export type ValueNodes = Identifier | UInteger | Integer | StringLiteral;
 
-export type UInteger = { type: "UInteger"; value: number };
-export const u32: Parser<UInteger> = parser((input): ParserOutput<UInteger> => {
-	const { source, index } = input;
-	let i = index;
-	while (i < source.length && source[i] >= "0" && source[i] <= "9") {
-		i++;
-	}
-	if (i === index) return new Error();
-	const value = parseInt(source.substring(index, i), 10);
-	return { node: { type: "UInteger", value }, nextInput: { source, index: i } };
-});
+export type UInteger = { type: "UInteger"; text: string };
+export const uInteger: Parser<UInteger> = parser(
+	(input): ParserOutput<UInteger> => {
+		const { source, index } = input;
+		let i = index;
+		while (i < source.length && source[i] >= "0" && source[i] <= "9") {
+			i++;
+		}
+		if (i === index)
+			return new Error(`expected digit, but found ${source[index]}`);
+		const text = source.substring(index, i);
+		return {
+			node: { type: "UInteger", text },
+			nextInput: { source, index: i },
+		};
+	},
+);
 
-export type Integer = { type: "Integer"; value: number };
-export const s32: Parser<Integer> = parser((input): ParserOutput<Integer> => {
-	const { source, index } = input;
-	let i = index;
-	if (source[i] === "+" || source[i] === "-") {
-		i++;
-	}
-	while (i < source.length && source[i] >= "0" && source[i] <= "9") {
-		i++;
-	}
-	if (i === index) return new Error();
-	const value = parseInt(source.substring(index, i), 10);
-	return { node: { type: "Integer", value }, nextInput: { source, index: i } };
-});
+export type Integer = { type: "Integer"; text: string };
+export const integer: Parser<Integer> = parser(
+	(input): ParserOutput<Integer> => {
+		const { source, index } = input;
+		let i = index;
+		if (source[i] === "+" || source[i] === "-") {
+			i++;
+		}
+		while (i < source.length && source[i] >= "0" && source[i] <= "9") {
+			i++;
+		}
+		if (i === index)
+			return new Error(`expected digit, but found ${source[index]}`);
+		const text = source.substring(index, i);
+		return { node: { type: "Integer", text }, nextInput: { source, index: i } };
+	},
+);
 
 export type Identifier = { type: "Identifier"; value: string };
 export function identifier(input: ParserInput): ParserOutput<Identifier> {
@@ -54,7 +63,7 @@ const idchars = new Set(
 );
 
 export type Index = UInteger | Identifier;
-export const index: Parser<Index> = oneOf<Index>([u32, identifier]);
+export const index: Parser<Index> = oneOf<Index>([uInteger, identifier]);
 
 export type StringLiteral = { type: "StringLiteral"; value: string };
 export const stringLiteral: Parser<StringLiteral> = parser(

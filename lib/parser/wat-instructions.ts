@@ -1,6 +1,6 @@
 import { do_, literal, many, Node, oneOf, Parser, opt } from "./p";
 import { Result, result } from "./wat-types";
-import { Index, index, s32, Integer } from "./wat-values";
+import { Index, index, integer, Integer } from "./wat-values";
 
 export type InstructionNode = PlainInstruction | FoldedInstruction;
 
@@ -36,7 +36,7 @@ export type ConstInstruction = {
 
 export const constInstruction: Parser<ConstInstruction> = do_(($) => {
 	const op = $(literal("i32.const")).value as "i32.const";
-	const val = $(s32);
+	const val = $(integer);
 	return { type: "ConstInstruction", op, val };
 });
 

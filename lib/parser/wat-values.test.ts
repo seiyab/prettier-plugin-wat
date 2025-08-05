@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { identifier, u32 } from "./wat-values";
+import { identifier, uInteger } from "./wat-values";
 import { check, input } from "./testing";
 
 describe("identifier", () => {
@@ -9,11 +9,11 @@ describe("identifier", () => {
 	});
 });
 
-describe("u32", () => {
+describe("uInteger", () => {
 	test("123", () => {
-		const out = check(u32.parse(input("123")));
+		const out = check(uInteger.parse(input("123")));
 		expect(out.node).toEqual(
-			expect.objectContaining({ type: "UInteger", value: 123 }),
+			expect.objectContaining({ type: "UInteger", text: "123" }),
 		);
 	});
 });
