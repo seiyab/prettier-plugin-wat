@@ -1,4 +1,15 @@
-import { literal, Node, Parser, do_, many, opt, eof, oneOf } from "./p";
+import {
+	literal,
+	Node,
+	Parser,
+	do_,
+	many,
+	opt,
+	eof,
+	oneOf,
+	Many,
+	Typed,
+} from "./p";
 import {
 	identifier,
 	Identifier,
@@ -9,20 +20,24 @@ import {
 } from "./wat-values";
 import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
 import { InstructionNode, instruction } from "./wat-instructions";
+import { Comment, gap } from "./wat-lexical-format";
 
 export type ModuleNodes = Program | Module | Function;
 export type ModuleElement = FunctionElement;
 
 export type Program = { type: "Program"; body: Node<Module>[] };
 export const program: Parser<Program> = do_(($) => {
+	const comments: Node<Comment>[] = [];
 	const body: Node<Module>[] = [];
+	comments.push(...$(gap).comments);
 	for (;;) {
 		if (!$.peek(literal("("))) break;
 		const m = $(module_);
 		body.push(m);
 	}
+	comments.push(...$(gap).comments);
 	void $(eof);
-	return { type: "Program", body };
+	return { type: "Program", body, comments };
 });
 
 export type Export = {
@@ -95,14 +110,19 @@ export type Function = {
 	instructions: Node<InstructionNode>[];
 };
 export const function_: Parser<Function> = do_(($) => {
+	const comments: Node<Comment>[] = [];
+	const m = <T extends Typed>(mn: Node<Many<T>>): Node<Many<T>> => {
+		comments.push(...(mn.comments ?? []));
+		return mn;
+	};
 	void $(literal("("));
 	void $(literal("func"));
 	const id = $(opt(identifier));
 	const expt = $(opt(inlineExport));
-	const params = $(many(do_(($) => $(param)))).nodes;
-	const results = $(many(do_(($) => $(result)))).nodes;
-	const locals = $(many(do_(($) => $(local)))).nodes;
-	const instructions = $(many(do_(($) => $(instruction)))).nodes;
+	const params = m($(many(do_(($) => $(param))))).nodes;
+	const results = m($(many(do_(($) => $(result))))).nodes;
+	const locals = m($(many(do_(($) => $(local))))).nodes;
+	const instructions = m($(many(do_(($) => $(instruction))))).nodes;
 	void $(literal(")"));
 	return {
 		type: "Function",
@@ -112,6 +132,7 @@ export const function_: Parser<Function> = do_(($) => {
 		locals,
 		results,
 		instructions,
+		comments,
 	};
 });
 type FunctionElement = InlineExport;

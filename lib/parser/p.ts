@@ -2,7 +2,7 @@
  * This file provides domain-inspecific parser implementation &  utilities
  */
 
-import { spaces, Comment, comment } from "./wat-lexical-format";
+import { spaces, Comment, gap } from "./wat-lexical-format";
 
 export type ParserInput = { source: string; index: number };
 export type ParserOutput<T extends Typed> =
@@ -14,8 +14,11 @@ export type Parser<T extends Typed> = { parse: ParserFunc<Node<T>> };
 
 type Location = { start: { offset: number }; end: { offset: number } };
 
-export type Node<T extends Typed> = T & { loc: Location; comments?: Comment[] };
-type Typed = { type: string };
+export type Node<T extends Typed> = T & {
+	loc: Location;
+	comments?: Node<Comment>[];
+};
+export type Typed = { type: string; comments?: Node<Comment>[] };
 
 export type Unknown = { type: "Unknown"; value: string };
 export type None = { type: "None" };
@@ -83,40 +86,72 @@ type Tools = {
 	peek: (p: Parser<Typed> | ParserFunc<Typed>) => boolean;
 };
 
-export function do_<T extends Typed>(process: ($: Tools) => T): Parser<T> {
-	return do_.dense(($) => {
+type DoOptions = { separator: Parser<Typed> };
+
+export function do_<T extends Typed>(
+	process: ($: Tools) => T,
+	opts?: DoOptions,
+): Parser<T> {
+	class Interrupt extends Error {
+		cause: Error;
+		constructor(cause: Error) {
+			super(cause.message);
+			this.cause = cause;
+		}
+	}
+
+	const separator = parser(opts?.separator ?? gap);
+
+	return parser(p);
+	function p(input: ParserInput): ParserOutput<T> {
+		let currentInput = input;
 		const comments: Node<Comment>[] = [];
 
-		const gap = do_.dense(($) => {
-			const coms: Node<Comment>[] = [];
-			void $(opt(spaces));
-			for (;;) {
-				const c = $(opt(comment));
-				if (c.type === "None") break;
-				comments.push(c);
-				void $(opt(spaces));
+		$.peek = (p: Parser<Typed> | ParserFunc<Typed>): boolean => {
+			let tempInput = currentInput;
+			if (separator != null && input.index !== currentInput.index) {
+				const g = separator.parse(tempInput);
+				if (!(g instanceof Error)) {
+					tempInput = g.nextInput;
+				}
 			}
-			return { type: "None", coms };
-		});
+			const out = parser(p).parse(tempInput);
+			return !(out instanceof Error);
+		};
 
-		const out = process(
-			Object.assign(
-				<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> => {
-					comments.push(...$(gap).coms);
-					return $(p);
-				},
-				{
-					peek: (p: Parser<Typed> | ParserFunc<Typed>) => {
-						void $(gap);
-						return $.peek(p);
-					},
-				},
-			),
-		);
-		void $(spaces);
-		return { ...out, comments: comments };
-	});
+		try {
+			const node = process($);
+			return {
+				node: { ...node, comments: comments.concat(node.comments ?? []) },
+				nextInput: currentInput,
+			};
+		} catch (e: unknown) {
+			if (e instanceof Interrupt) return e.cause;
+			throw e;
+		}
+
+		function $<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> {
+			if (separator != null && input.index !== currentInput.index) {
+				const g = separator.parse(currentInput);
+				if (!(g instanceof Error)) {
+					currentInput = g.nextInput;
+					comments.push(...(g.node.comments ?? []));
+				}
+			}
+			const out = parser(p).parse(currentInput);
+			if (out instanceof ParseError) throw new Interrupt(out);
+			if (out instanceof Error)
+				throw new Interrupt(new ParseError(out, currentInput));
+			currentInput = out.nextInput;
+			return out.node;
+		}
+	}
 }
+
+export function nop(input: ParserInput): ParserOutput<None> {
+	return { node: { type: "None" }, nextInput: input };
+}
+
 do_.dense = function dense<T extends Typed>(
 	process: ($: Tools) => T,
 ): Parser<T> {
@@ -204,25 +239,18 @@ export function oneOf<T extends Typed>(
 	}
 }
 
-type Many<T extends Typed> = { type: "Many"; nodes: Node<T>[] };
+export type Many<T extends Typed> = { type: "Many"; nodes: Node<T>[] };
 export function many<T extends Typed>(
 	elem: Parser<T> | ParserFunc<T>,
 ): Parser<Many<T>> {
-	const p = parser(elem);
-	return parser(parse);
-	function parse(input: ParserInput): ParserOutput<Many<T>> {
+	return do_(($) => {
 		const nodes: Node<T>[] = [];
-		let currentInput = input;
 		for (;;) {
-			const out = p.parse(currentInput);
-			if (out instanceof Error) {
-				break;
-			}
-			nodes.push(out.node);
-			currentInput = out.nextInput;
+			if (!$.peek(elem)) break;
+			nodes.push($(elem));
 		}
-		return { node: { type: "Many", nodes }, nextInput: currentInput };
-	}
+		return { type: "Many", nodes };
+	});
 }
 
 export function eof(input: ParserInput): ParserOutput<None> {

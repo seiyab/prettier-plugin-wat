@@ -1,5 +1,9 @@
 import { describe, test, expect } from "vitest";
-import { variableInstruction } from "./wat-instructions";
+import {
+	foldedInstrucion,
+	numericInstruction,
+	variableInstruction,
+} from "./wat-instructions";
 import { check, input } from "./testing";
 
 const o = (u: object): unknown => expect.objectContaining(u);
@@ -12,6 +16,37 @@ describe("local.get", () => {
 				type: "VariableInstruction",
 				op: "local.get",
 				index: o({ type: "UInteger", text: "0" }),
+			}),
+		);
+	});
+});
+
+describe("numeric instruction", () => {
+	test("i32.add", () => {
+		const out = check(numericInstruction.parse(input("i32.add")));
+		expect(out.node).toEqual(o({ type: "NumericInstruction", op: "i32.add" }));
+	});
+});
+
+describe("folded plain instruction", () => {
+	test("(i32.add (local.get $a) (local.get $b))", () => {
+		const out = check(
+			foldedInstrucion.parse(input("(i32.add (local.get $a) (local.get $b))")),
+		);
+		expect(out.node).toEqual(
+			o({
+				type: "FoldedPlainInstruction",
+				operator: o({ type: "NumericInstruction", op: "i32.add" }),
+				operands: [
+					o({
+						type: "FoldedPlainInstruction",
+						operator: o({ type: "VariableInstruction" }),
+					}),
+					o({
+						type: "FoldedPlainInstruction",
+						operator: o({ type: "VariableInstruction" }),
+					}),
+				],
 			}),
 		);
 	});

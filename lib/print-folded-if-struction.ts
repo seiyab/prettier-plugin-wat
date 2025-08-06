@@ -22,7 +22,7 @@ export function printFoldedIfInstruction(
 		group([
 			"(then",
 			indent([line, join(line, path.map(print, "then"))]),
-			line,
+			softline,
 			")",
 		]),
 	);
@@ -32,7 +32,7 @@ export function printFoldedIfInstruction(
 			group([
 				"(else",
 				indent([line, join(line, path.map(print, "else"))]),
-				line,
+				softline,
 				")",
 			]),
 		);

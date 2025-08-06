@@ -1,6 +1,7 @@
-import { do_, literal, many, Node, oneOf, Parser, opt } from "./p";
+import { do_, literal, many, Node, oneOf, Parser, opt, Many, Typed } from "./p";
 import { Result, result } from "./wat-types";
 import { Index, index, integer, Integer } from "./wat-values";
+import { Comment } from "./wat-lexical-format";
 
 export type InstructionNode = PlainInstruction | FoldedInstruction;
 
@@ -64,16 +65,22 @@ export type FoldedIfInstruction = {
 };
 
 export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
+	const comments: Node<Comment>[] = [];
+	const c = <T extends Typed>(mn: Node<Many<T>>): Node<Many<T>> => {
+		comments.push(...(mn.comments ?? []));
+		return mn;
+	};
+
 	void $(literal("("));
 	void $(literal("if"));
 
 	const result_ = $(opt(result));
 
-	const cond = $(many(instruction)).nodes;
+	const cond = c($(many(instruction))).nodes;
 
 	void $(literal("("));
 	void $(literal("then"));
-	const thenClause = $(many(instruction)).nodes;
+	const thenClause = c($(many(instruction))).nodes;
 	void $(literal(")"));
 
 	const elseClause = $(
@@ -96,6 +103,7 @@ export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
 		cond: cond,
 		then: thenClause,
 		else: elseClause.type === "None" ? null : elseClause.nodes,
+		comments,
 	};
 });
 
@@ -112,7 +120,7 @@ type FoldedPlainInstruction = {
 const foldedPlainInstruction: Parser<FoldedPlainInstruction> = do_(($) => {
 	void $(literal("("));
 	const operator = $(plainInstruction);
-	const operands = $(many(foldedInstrucion)).nodes;
+	const { nodes: operands, comments } = $(many(foldedInstrucion));
 	void $(literal(")"));
-	return { type: "FoldedPlainInstruction", operator, operands };
+	return { type: "FoldedPlainInstruction", operator, operands, comments };
 });

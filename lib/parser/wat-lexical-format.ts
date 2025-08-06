@@ -1,4 +1,13 @@
-import { literal, None, oneOf, ParserInput, ParserOutput } from "./p";
+import {
+	do_,
+	literal,
+	None,
+	oneOf,
+	opt,
+	ParserInput,
+	ParserOutput,
+	Node,
+} from "./p";
 
 export function spaces(input: ParserInput): ParserOutput<None> {
 	let i = input.index;
@@ -48,6 +57,21 @@ function blockComment(input: ParserInput): ParserOutput<Comment> {
 		nextInput: { ...input, index: nextIndex },
 	};
 }
+
+export const gap = (input: ParserInput) =>
+	do_
+		.dense(($) => {
+			const comments: Node<Comment>[] = [];
+			void $(opt(spaces));
+			for (;;) {
+				const c = $(opt(comment));
+				if (c.type === "None") break;
+				comments.push(c);
+				void $(opt(spaces));
+			}
+			return { type: "Gap", comments };
+		})
+		.parse(input);
 
 function linebreak(c: string): boolean {
 	return c === "\n" || c === "\r";

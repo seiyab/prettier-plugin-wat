@@ -137,16 +137,11 @@ describe("function", () => {
 				instructions: [
 					o({ op: "local.get", index: o({ value: "$lhs" }) }),
 					o({ op: "local.get", index: o({ value: "$rhs" }) }),
-					o({
-						op: "i32.add",
-						type: "NumericInstruction",
-						comments: [
-							o({ type: "Comment", kind: "line", content: " comment 2" }),
-						],
-					}),
+					o({ op: "i32.add", type: "NumericInstruction" }),
 				],
 				comments: [
 					o({ type: "Comment", kind: "block", content: " comment 1 " }),
+					o({ type: "Comment", kind: "line", content: " comment 2" }),
 				],
 			}),
 		);
