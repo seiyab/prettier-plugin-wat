@@ -2,7 +2,7 @@
  * This file provides domain-inspecific parser implementation &  utilities
  */
 
-import { spaces, Comment, gap } from "./wat-lexical-format";
+import { Comment, gap } from "./wat-lexical-format";
 
 export type ParserInput = { source: string; index: number };
 export type ParserOutput<T extends Typed> =
@@ -86,7 +86,7 @@ type Tools = {
 	peek: (p: Parser<Typed> | ParserFunc<Typed>) => boolean;
 };
 
-type DoOptions = { separator: Parser<Typed> };
+type DoOptions = { separator: Parser<Typed> | ParserFunc<Typed> };
 
 export function do_<T extends Typed>(
 	process: ($: Tools) => T,

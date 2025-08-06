@@ -7,6 +7,7 @@ import {
 	ParserInput,
 	ParserOutput,
 	Node,
+	nop,
 } from "./p";
 
 export function spaces(input: ParserInput): ParserOutput<None> {
@@ -58,20 +59,20 @@ function blockComment(input: ParserInput): ParserOutput<Comment> {
 	};
 }
 
-export const gap = (input: ParserInput) =>
-	do_
-		.dense(($) => {
-			const comments: Node<Comment>[] = [];
+export const gap = do_(
+	($) => {
+		const comments: Node<Comment>[] = [];
+		void $(opt(spaces));
+		for (;;) {
+			const c = $(opt(comment));
+			if (c.type === "None") break;
+			comments.push(c);
 			void $(opt(spaces));
-			for (;;) {
-				const c = $(opt(comment));
-				if (c.type === "None") break;
-				comments.push(c);
-				void $(opt(spaces));
-			}
-			return { type: "Gap", comments };
-		})
-		.parse(input);
+		}
+		return { type: "Gap", comments };
+	},
+	{ separator: nop },
+);
 
 function linebreak(c: string): boolean {
 	return c === "\n" || c === "\r";
