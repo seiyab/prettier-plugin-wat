@@ -119,10 +119,10 @@ export const function_: Parser<Function> = do_(($) => {
 	void $(literal("func"));
 	const id = $(opt(identifier));
 	const expt = $(opt(inlineExport));
-	const params = m($(many(do_(($) => $(param))))).nodes;
-	const results = m($(many(do_(($) => $(result))))).nodes;
-	const locals = m($(many(do_(($) => $(local))))).nodes;
-	const instructions = m($(many(do_(($) => $(instruction))))).nodes;
+	const params = m($(many(param))).nodes;
+	const results = m($(many(result))).nodes;
+	const locals = m($(many(local))).nodes;
+	const instructions = m($(many(instruction))).nodes;
 	void $(literal(")"));
 	return {
 		type: "Function",
