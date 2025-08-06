@@ -152,45 +152,6 @@ export function nop(input: ParserInput): ParserOutput<None> {
 	return { node: { type: "None" }, nextInput: input };
 }
 
-do_.dense = function dense<T extends Typed>(
-	process: ($: Tools) => T,
-): Parser<T> {
-	class Interrupt extends Error {
-		cause: Error;
-		constructor(cause: Error) {
-			super(cause.message);
-			this.cause = cause;
-		}
-	}
-
-	return parser(p);
-	function p(input: ParserInput): ParserOutput<T> {
-		let currentInput = input;
-
-		$.peek = (p: Parser<Typed> | ParserFunc<Typed>): boolean => {
-			const out = parser(p).parse(currentInput);
-			return !(out instanceof Error);
-		};
-
-		try {
-			const node = process($);
-			return { node, nextInput: currentInput };
-		} catch (e: unknown) {
-			if (e instanceof Interrupt) return e.cause;
-			throw e;
-		}
-
-		function $<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> {
-			const out = parser(p).parse(currentInput);
-			if (out instanceof ParseError) throw new Interrupt(out);
-			if (out instanceof Error)
-				throw new Interrupt(new ParseError(out, currentInput));
-			currentInput = out.nextInput;
-			return out.node;
-		}
-	}
-};
-
 type Literal = { type: "Literal"; value: string };
 export function literal(s: string): Parser<Literal> {
 	return parser(parse);
