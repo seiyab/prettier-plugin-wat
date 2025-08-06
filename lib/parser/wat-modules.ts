@@ -17,6 +17,8 @@ import {
 	Index,
 	stringLiteral,
 	StringLiteral,
+	uInteger,
+	UInteger,
 } from "./wat-values";
 import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
 import { InstructionNode, instruction } from "./wat-instructions";
@@ -66,13 +68,67 @@ const exportdesc = do_(($): ExportDesc => {
 	return { type: "ExportDesc", kind, index: idx };
 });
 
+export type Limits = {
+	type: "Limits";
+	min: AST<UInteger>;
+	max?: AST<UInteger>;
+};
+const limits: Parser<Limits> = do_(($) => {
+	const min = $(uInteger);
+	const max = $(opt(uInteger));
+	return { type: "Limits", min, max: max.type === "None" ? undefined : max };
+});
+
+export type MemType = { type: "MemType"; limits: AST<Limits> };
+const memtype: Parser<MemType> = do_(($) => {
+	const limits_ = $(limits);
+	return { type: "MemType", limits: limits_ };
+});
+
+export type ImportDesc = {
+	type: "ImportDesc";
+	kind: "func" | "table" | "memory" | "global";
+	id?: AST<Identifier>;
+	memtype?: AST<MemType>; // for memory
+	// TODO: other import description types
+};
+const importdesc: Parser<ImportDesc> = do_(($) => {
+	void $(literal("("));
+	const kind = $(literal("memory")).value as ImportDesc["kind"];
+	const id = $(opt(identifier));
+	const mem = $(memtype);
+	void $(literal(")"));
+	return {
+		type: "ImportDesc",
+		kind,
+		id: id.type === "None" ? undefined : id,
+		memtype: mem,
+	};
+});
+
+export type Import = {
+	type: "Import";
+	module: AST<StringLiteral>;
+	name: AST<StringLiteral>;
+	desc: AST<ImportDesc>;
+};
+export const import_: Parser<Import> = do_(($) => {
+	void $(literal("("));
+	void $(literal("import"));
+	const mod = $(stringLiteral);
+	const name = $(stringLiteral);
+	const desc = $(importdesc);
+	void $(literal(")"));
+	return { type: "Import", module: mod, name, desc };
+});
+
 export type Module = {
 	type: "Module";
 	id?: AST<Identifier>;
 	modulefields: AST<ModuleField>[];
 };
 // TODO: other modulefields
-type ModuleField = Export | Function;
+type ModuleField = Export | Function | Import;
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
@@ -80,7 +136,7 @@ export const module_: Parser<Module> = do_(($) => {
 	const modulefields: AST<ModuleField>[] = [];
 	for (;;) {
 		if (!$.peek(literal("("))) break;
-		modulefields.push($(oneOf<ModuleField>([export_, function_])));
+		modulefields.push($(oneOf<ModuleField>([export_, function_, import_])));
 	}
 	void $(literal(")"));
 	return {

@@ -29,6 +29,18 @@ export const numericInstruction: Parser<NumericInstruction> = do_(($) => {
 	return { type: "NumericInstruction", op };
 });
 
+export type VectorInstruction = { type: "VectorInstruction"; op: string };
+export const vectorInstruction: Parser<VectorInstruction> = do_(($) => {
+	const op = $(
+		oneOf([
+			literal("v128.store"),
+			literal("i8x16.swizzle"),
+			literal("v128.load"),
+		]),
+	).value;
+	return { type: "VectorInstruction", op };
+});
+
 export type ConstInstruction = {
 	type: "ConstInstruction";
 	op: "i32.const";
@@ -41,15 +53,33 @@ export const constInstruction: Parser<ConstInstruction> = do_(($) => {
 	return { type: "ConstInstruction", op, val };
 });
 
+export type V128ConstInstruction = {
+	type: "V128ConstInstruction";
+	op: "v128.const";
+	lanetype: "i8x16";
+	vals: AST<Integer>[];
+};
+
+export const v128ConstInstruction: Parser<V128ConstInstruction> = do_(($) => {
+	const op = $(literal("v128.const")).value as "v128.const";
+	const lanetype = $(literal("i8x16")).value as "i8x16";
+	const vals = $(many(integer));
+	return { type: "V128ConstInstruction", op, lanetype, vals: vals.nodes };
+});
+
 type PlainInstruction =
 	| VariableInstruction
 	| NumericInstruction
-	| ConstInstruction;
+	| ConstInstruction
+	| VectorInstruction
+	| V128ConstInstruction;
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([
 		variableInstruction,
 		numericInstruction,
 		constInstruction,
+		vectorInstruction,
+		v128ConstInstruction,
 	]);
 
 export const instruction: Parser<InstructionNode> = do_(($) =>
@@ -85,11 +115,11 @@ export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
 
 	const elseClause = $(
 		opt(
-			do_(($$) => {
-				void $$(literal("("));
-				void $$(literal("else"));
-				const elseInstructions = $$(many(instruction));
-				void $$(literal(")"));
+			do_(($) => {
+				void $(literal("("));
+				void $(literal("else"));
+				const elseInstructions = $(many(instruction));
+				void $(literal(")"));
 				return elseInstructions;
 			}),
 		),

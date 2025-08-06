@@ -7,6 +7,7 @@ const files = [
 	"add/add.wat",
 	"add-not-folded/add-not-folded.wat",
 	"if-expr/ifexpr.wat",
+	"endian-flip/endianflip.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
