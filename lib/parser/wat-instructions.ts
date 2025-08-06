@@ -1,4 +1,4 @@
-import { do_, literal, many, Node, oneOf, Parser, opt, Many, Typed } from "./p";
+import { do_, literal, many, AST, oneOf, Parser, opt, Many, Node } from "./p";
 import { Result, result } from "./wat-types";
 import { Index, index, integer, Integer } from "./wat-values";
 import { Comment } from "./wat-lexical-format";
@@ -8,7 +8,7 @@ export type InstructionNode = PlainInstruction | FoldedInstruction;
 export type VariableInstruction = {
 	type: "VariableInstruction";
 	op: `${"local" | "global"}.${"get" | "set" | "tee"}`;
-	index: Node<Index>;
+	index: AST<Index>;
 };
 export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 	const op = $(
@@ -32,7 +32,7 @@ export const numericInstruction: Parser<NumericInstruction> = do_(($) => {
 export type ConstInstruction = {
 	type: "ConstInstruction";
 	op: "i32.const";
-	val: Node<Integer>;
+	val: AST<Integer>;
 };
 
 export const constInstruction: Parser<ConstInstruction> = do_(($) => {
@@ -58,15 +58,15 @@ export const instruction: Parser<InstructionNode> = do_(($) =>
 
 export type FoldedIfInstruction = {
 	type: "FoldedIfInstruction";
-	result: Node<Result> | null;
-	cond: Node<InstructionNode>[];
-	then: Node<InstructionNode>[];
-	else: Node<InstructionNode>[] | null;
+	result: AST<Result> | null;
+	cond: AST<InstructionNode>[];
+	then: AST<InstructionNode>[];
+	else: AST<InstructionNode>[] | null;
 };
 
 export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
-	const comments: Node<Comment>[] = [];
-	const c = <T extends Typed>(mn: Node<Many<T>>): Node<Many<T>> => {
+	const comments: AST<Comment>[] = [];
+	const c = <T extends Node>(mn: AST<Many<T>>): AST<Many<T>> => {
 		comments.push(...(mn.comments ?? []));
 		return mn;
 	};
@@ -114,8 +114,8 @@ export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) =>
 
 type FoldedPlainInstruction = {
 	type: "FoldedPlainInstruction";
-	operator: Node<PlainInstruction>;
-	operands: Node<FoldedInstruction>[];
+	operator: AST<PlainInstruction>;
+	operands: AST<FoldedInstruction>[];
 };
 const foldedPlainInstruction: Parser<FoldedPlainInstruction> = do_(($) => {
 	void $(literal("("));

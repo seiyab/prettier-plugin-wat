@@ -1,6 +1,6 @@
 import {
 	literal,
-	Node,
+	AST,
 	Parser,
 	do_,
 	many,
@@ -8,7 +8,7 @@ import {
 	eof,
 	oneOf,
 	Many,
-	Typed,
+	Node,
 } from "./p";
 import {
 	identifier,
@@ -25,10 +25,10 @@ import { Comment, gap } from "./wat-lexical-format";
 export type ModuleNodes = Program | Module | Function;
 export type ModuleElement = FunctionElement;
 
-export type Program = { type: "Program"; body: Node<Module>[] };
+export type Program = { type: "Program"; body: AST<Module>[] };
 export const program: Parser<Program> = do_(($) => {
-	const comments: Node<Comment>[] = [];
-	const body: Node<Module>[] = [];
+	const comments: AST<Comment>[] = [];
+	const body: AST<Module>[] = [];
 	comments.push(...$(gap).comments);
 	for (;;) {
 		if (!$.peek(literal("("))) break;
@@ -42,8 +42,8 @@ export const program: Parser<Program> = do_(($) => {
 
 export type Export = {
 	type: "Export";
-	name: Node<StringLiteral>;
-	exportdesc: Node<ExportDesc>;
+	name: AST<StringLiteral>;
+	exportdesc: AST<ExportDesc>;
 };
 export const export_: Parser<Export> = do_(($) => {
 	void $(literal("("));
@@ -56,7 +56,7 @@ export const export_: Parser<Export> = do_(($) => {
 export type ExportDesc = {
 	type: "ExportDesc";
 	kind: "func" | "table" | "memory" | "global";
-	index: Node<Index>;
+	index: AST<Index>;
 };
 const exportdesc = do_(($): ExportDesc => {
 	void $(literal("("));
@@ -68,8 +68,8 @@ const exportdesc = do_(($): ExportDesc => {
 
 export type Module = {
 	type: "Module";
-	id?: Node<Identifier>;
-	modulefields: Node<ModuleField>[];
+	id?: AST<Identifier>;
+	modulefields: AST<ModuleField>[];
 };
 // TODO: other modulefields
 type ModuleField = Export | Function;
@@ -77,7 +77,7 @@ export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
 	const id = $(opt(identifier));
-	const modulefields: Node<ModuleField>[] = [];
+	const modulefields: AST<ModuleField>[] = [];
 	for (;;) {
 		if (!$.peek(literal("("))) break;
 		modulefields.push($(oneOf<ModuleField>([export_, function_])));
@@ -90,7 +90,7 @@ export const module_: Parser<Module> = do_(($) => {
 	};
 });
 
-type Local = { type: "Local"; id?: Node<Identifier>; v: Node<ValueType> };
+type Local = { type: "Local"; id?: AST<Identifier>; v: AST<ValueType> };
 const local: Parser<Local> = do_(($) => {
 	void $(literal("("));
 	void $(literal("local"));
@@ -102,16 +102,16 @@ const local: Parser<Local> = do_(($) => {
 
 export type Function = {
 	type: "Function";
-	id?: Node<Identifier>;
-	export_?: Node<InlineExport>;
-	params: Node<Param>[];
-	locals: Node<Local>[];
-	results: Node<Result>[];
-	instructions: Node<InstructionNode>[];
+	id?: AST<Identifier>;
+	export_?: AST<InlineExport>;
+	params: AST<Param>[];
+	locals: AST<Local>[];
+	results: AST<Result>[];
+	instructions: AST<InstructionNode>[];
 };
 export const function_: Parser<Function> = do_(($) => {
-	const comments: Node<Comment>[] = [];
-	const m = <T extends Typed>(mn: Node<Many<T>>): Node<Many<T>> => {
+	const comments: AST<Comment>[] = [];
+	const m = <T extends Node>(mn: AST<Many<T>>): AST<Many<T>> => {
 		comments.push(...(mn.comments ?? []));
 		return mn;
 	};

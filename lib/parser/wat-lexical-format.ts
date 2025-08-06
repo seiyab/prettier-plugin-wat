@@ -6,7 +6,7 @@ import {
 	opt,
 	ParserInput,
 	ParserOutput,
-	Node,
+	AST,
 	nop,
 } from "./p";
 
@@ -24,6 +24,7 @@ export type Comment = {
 	type: "Comment";
 	kind: "block" | "line";
 	content: string;
+	comments?: undefined;
 };
 export const comment = oneOf([lineComment, blockComment]);
 function lineComment(input: ParserInput): ParserOutput<Comment> {
@@ -61,7 +62,7 @@ function blockComment(input: ParserInput): ParserOutput<Comment> {
 
 export const gap = do_(
 	($) => {
-		const comments: Node<Comment>[] = [];
+		const comments: AST<Comment>[] = [];
 		void $(opt(spaces));
 		for (;;) {
 			const c = $(opt(comment));

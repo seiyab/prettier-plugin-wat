@@ -1,6 +1,6 @@
 import type { SupportLanguage, Parser, Printer } from "prettier";
 import { print } from "./lib/printer";
-import { Node } from "./lib/parser/p";
+import { AST } from "./lib/parser/p";
 import { parse, WatNode } from "./lib/parser/wat";
 import { Comment } from "./lib/parser/wat-lexical-format";
 import { isNode, hoistComment } from "./lib/ast";
@@ -16,8 +16,8 @@ export const parsers: { [parserName: string]: Parser } = {
 			return hoistComment(ast);
 		},
 		astFormat: "wat",
-		locStart: (node: Node<WatNode>) => node.loc.start.offset,
-		locEnd: (node: Node<WatNode>) => node.loc.end.offset,
+		locStart: (node: AST<WatNode>) => node.loc.start.offset,
+		locEnd: (node: AST<WatNode>) => node.loc.end.offset,
 	},
 };
 
@@ -25,7 +25,7 @@ export const printers: { [astFormat: string]: Printer } = {
 	wat: {
 		print,
 		printComment: (commentPath) => {
-			const comment = commentPath.node as Node<Comment>;
+			const comment = commentPath.node as AST<Comment>;
 			if (comment.kind === "line") {
 				return ";;" + comment.content.trimEnd();
 			} else {

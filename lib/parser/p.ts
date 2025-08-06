@@ -5,20 +5,19 @@
 import { Comment, gap } from "./wat-lexical-format";
 
 export type ParserInput = { source: string; index: number };
-export type ParserOutput<T extends Typed> =
+export type ParserOutput<T extends Node> =
 	| { node: T; nextInput: ParserInput }
 	| Error;
-export type ParserFunc<T extends Typed> = (i: ParserInput) => ParserOutput<T>;
+export type ParserFunc<T extends Node> = (i: ParserInput) => ParserOutput<T>;
 
-export type Parser<T extends Typed> = { parse: ParserFunc<Node<T>> };
+export type Parser<T extends Node> = { parse: ParserFunc<AST<T>> };
 
 type Location = { start: { offset: number }; end: { offset: number } };
+type Located = { loc: Location };
 
-export type Node<T extends Typed> = T & {
-	loc: Location;
-	comments?: Node<Comment>[];
-};
-export type Typed = { type: string; comments?: Node<Comment>[] };
+export type AST<T extends Node> = T &
+	Located & { comments?: (Comment & Located)[] };
+export type Node = { type: string; comments?: (Comment & Located)[] };
 
 export type Unknown = { type: "Unknown"; value: string };
 export type None = { type: "None" };
@@ -55,14 +54,14 @@ export class ParseError extends Error {
 	}
 }
 
-export function parser<T extends Typed>(
+export function parser<T extends Node>(
 	p: ParserFunc<T> | Parser<T>,
 ): Parser<T> {
 	if (typeof p !== "function") return p;
 	const fn = p;
 	return { parse };
 
-	function parse(input: ParserInput): ParserOutput<Node<T>> {
+	function parse(input: ParserInput): ParserOutput<AST<T>> {
 		const out = fn(input);
 		if (out instanceof ParseError) return out;
 		if (out instanceof Error) return new ParseError(out, input);
@@ -82,13 +81,13 @@ function location(loc: { start: number; end: number }): Location {
 }
 
 type Tools = {
-	<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S>;
-	peek: (p: Parser<Typed> | ParserFunc<Typed>) => boolean;
+	<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
+	peek: (p: Parser<Node> | ParserFunc<Node>) => boolean;
 };
 
-type DoOptions = { separator: Parser<Typed> | ParserFunc<Typed> };
+type DoOptions = { separator: Parser<Node> | ParserFunc<Node> };
 
-export function do_<T extends Typed>(
+export function do_<T extends Node>(
 	process: ($: Tools) => T,
 	opts?: DoOptions,
 ): Parser<T> {
@@ -105,9 +104,9 @@ export function do_<T extends Typed>(
 	return parser(p);
 	function p(input: ParserInput): ParserOutput<T> {
 		let currentInput = input;
-		const comments: Node<Comment>[] = [];
+		const comments: AST<Comment>[] = [];
 
-		$.peek = (p: Parser<Typed> | ParserFunc<Typed>): boolean => {
+		$.peek = (p: Parser<Node> | ParserFunc<Node>): boolean => {
 			let tempInput = currentInput;
 			if (separator != null && input.index !== currentInput.index) {
 				const g = separator.parse(tempInput);
@@ -130,7 +129,7 @@ export function do_<T extends Typed>(
 			throw e;
 		}
 
-		function $<S extends Typed>(p: Parser<S> | ParserFunc<S>): Node<S> {
+		function $<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
 			if (separator != null && input.index !== currentInput.index) {
 				const g = separator.parse(currentInput);
 				if (!(g instanceof Error)) {
@@ -168,7 +167,7 @@ export function literal(s: string): Parser<Literal> {
 	}
 }
 
-export function opt<T extends Typed>(p: Parser<T> | ParserFunc<T>) {
+export function opt<T extends Node>(p: Parser<T> | ParserFunc<T>) {
 	return parser(parse);
 	function parse(input: ParserInput): ParserOutput<T | None> {
 		const out = parser(p).parse(input);
@@ -177,7 +176,7 @@ export function opt<T extends Typed>(p: Parser<T> | ParserFunc<T>) {
 	}
 }
 
-export function oneOf<T extends Typed>(
+export function oneOf<T extends Node>(
 	parsers: (Parser<T> | ParserFunc<T>)[],
 ): Parser<T> {
 	return parser(parse);
@@ -200,12 +199,12 @@ export function oneOf<T extends Typed>(
 	}
 }
 
-export type Many<T extends Typed> = { type: "Many"; nodes: Node<T>[] };
-export function many<T extends Typed>(
+export type Many<T extends Node> = { type: "Many"; nodes: AST<T>[] };
+export function many<T extends Node>(
 	elem: Parser<T> | ParserFunc<T>,
 ): Parser<Many<T>> {
 	return do_(($) => {
-		const nodes: Node<T>[] = [];
+		const nodes: AST<T>[] = [];
 		for (;;) {
 			if (!$.peek(elem)) break;
 			nodes.push($(elem));

@@ -1,4 +1,4 @@
-import { do_, literal, oneOf, opt, Node, Parser } from "./p";
+import { do_, literal, oneOf, opt, AST, Parser } from "./p";
 import { identifier, Identifier } from "./wat-values";
 
 export type TypeNodes = ValueType | FunctionType;
@@ -16,11 +16,7 @@ export const valtype: Parser<ValueType> = do_(($) => {
 
 type FunctionType = Param | Result; // TODO: functype
 
-export type Param = {
-	type: "Param";
-	id?: Node<Identifier>;
-	v: Node<ValueType>;
-};
+export type Param = { type: "Param"; id?: AST<Identifier>; v: AST<ValueType> };
 export const param: Parser<Param> = do_(($) => {
 	void $(literal("("));
 	void $(literal("param"));
@@ -30,7 +26,7 @@ export const param: Parser<Param> = do_(($) => {
 	return { type: "Param", id: id.type === "None" ? undefined : id, v };
 });
 
-export type Result = { type: "Result"; v: Node<ValueType> };
+export type Result = { type: "Result"; v: AST<ValueType> };
 export const result: Parser<Result> = do_(($) => {
 	void $(literal("("));
 	void $(literal("result"));
