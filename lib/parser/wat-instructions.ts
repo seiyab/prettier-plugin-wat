@@ -1,6 +1,25 @@
-import { do_, literal, many, AST, oneOf, Parser, opt, Many, Node } from "./p";
+import {
+	do_,
+	literal,
+	many,
+	AST,
+	oneOf,
+	Parser,
+	opt,
+	Many,
+	Node,
+	dropNone,
+	nop,
+} from "./p";
 import { Result, result } from "./wat-types";
-import { Index, index, integer, Integer } from "./wat-values";
+import {
+	Index,
+	index,
+	integer,
+	Integer,
+	uInteger,
+	UInteger,
+} from "./wat-values";
 import { Comment } from "./wat-lexical-format";
 
 export type InstructionNode = PlainInstruction | FoldedInstruction;
@@ -22,23 +41,32 @@ export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 	return { type: "VariableInstruction", op, index: idx };
 });
 
+export type Memarg = { type: "Memarg"; offset?: UInteger; align?: UInteger };
+export const memarg: Parser<Memarg> = do_(($) => {
+	const offset = $(
+		opt(
+			do_(($) => {
+				void $(literal("offset="));
+				return $(uInteger);
+			}),
+		),
+	);
+	const align = $(
+		opt(
+			do_(($) => {
+				void $(literal("align="));
+				return $(uInteger);
+			}),
+		),
+	);
+	return { type: "Memarg", offset: dropNone(offset), align: dropNone(align) };
+});
+
 export type NumericInstruction = { type: "NumericInstruction"; op: string };
 
 export const numericInstruction: Parser<NumericInstruction> = do_(($) => {
 	const op = $(oneOf([literal("i32.add"), literal("i32.ge_s")])).value;
 	return { type: "NumericInstruction", op };
-});
-
-export type VectorInstruction = { type: "VectorInstruction"; op: string };
-export const vectorInstruction: Parser<VectorInstruction> = do_(($) => {
-	const op = $(
-		oneOf([
-			literal("v128.store"),
-			literal("i8x16.swizzle"),
-			literal("v128.load"),
-		]),
-	).value;
-	return { type: "VectorInstruction", op };
 });
 
 export type ConstInstruction = {
@@ -53,33 +81,87 @@ export const constInstruction: Parser<ConstInstruction> = do_(($) => {
 	return { type: "ConstInstruction", op, val };
 });
 
-export type V128ConstInstruction = {
-	type: "V128ConstInstruction";
+export type VectorInstruction =
+	| VectorSimpleInstruction
+	| VecotrMemoryInstructoin
+	| VectorConstInstruction;
+
+type VectorSimpleInstruction = { type: "VectorSimpleInstruction"; op: string };
+const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = do_(
+	($) => {
+		const type = $(
+			oneOf(
+				["i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2"].map(literal),
+			),
+		);
+		void $(literal("."));
+		const op = $(
+			oneOf(
+				["swizzle", "splat", "eq", "ne", "lt_s", "lt_u", "gt_s", "gt_u"].map(
+					literal,
+				),
+			),
+		);
+
+		return { type: "VectorSimpleInstruction", op: `${type.value}.${op.value}` };
+	},
+	{ separator: nop },
+);
+
+export type VecotrMemoryInstructoin = {
+	type: "VecotrMemoryInstructoin";
+	op: string;
+	memarg: AST<Memarg>;
+	laneindex?: AST<UInteger>;
+};
+const vectorMemoryInstruction: Parser<VecotrMemoryInstructoin> = do_(($) => {
+	const op = $(
+		do_(
+			($) => {
+				void $(literal("v128."));
+				const ls = $(oneOf([literal("load"), literal("store")]));
+				return { type: "Temporal", value: `v128.${ls.value}` };
+			},
+			{ separator: nop },
+		),
+	).value;
+
+	const ma = $(memarg);
+	return { type: "VecotrMemoryInstructoin", op, memarg: ma };
+});
+
+export type VectorConstInstruction = {
+	type: "VectorConstInstruction";
 	op: "v128.const";
 	lanetype: "i8x16";
 	vals: AST<Integer>[];
 };
 
-export const v128ConstInstruction: Parser<V128ConstInstruction> = do_(($) => {
+const vectorConstInstruction: Parser<VectorConstInstruction> = do_(($) => {
 	const op = $(literal("v128.const")).value as "v128.const";
 	const lanetype = $(literal("i8x16")).value as "i8x16";
 	const vals = $(many(integer));
-	return { type: "V128ConstInstruction", op, lanetype, vals: vals.nodes };
+	return { type: "VectorConstInstruction", op, lanetype, vals: vals.nodes };
 });
+
+export const vectorInstruction = oneOf<VectorInstruction>([
+	vectorSimpleInstruction,
+	vectorMemoryInstruction,
+	vectorConstInstruction,
+]);
 
 type PlainInstruction =
 	| VariableInstruction
 	| NumericInstruction
 	| ConstInstruction
 	| VectorInstruction
-	| V128ConstInstruction;
+	| VectorConstInstruction;
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([
 		variableInstruction,
 		numericInstruction,
 		constInstruction,
 		vectorInstruction,
-		v128ConstInstruction,
 	]);
 
 export const instruction: Parser<InstructionNode> = do_(($) =>

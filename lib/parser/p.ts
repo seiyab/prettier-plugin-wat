@@ -218,3 +218,8 @@ export function eof(input: ParserInput): ParserOutput<None> {
 		return { node: { type: "None" }, nextInput: input };
 	return new Error(`unexpected character "${input.source[input.index]}"`);
 }
+
+export function dropNone<T extends Node>(n: AST<T | None>): AST<T> | undefined {
+	if (n.type !== "None") return n as AST<T>;
+	return undefined;
+}
