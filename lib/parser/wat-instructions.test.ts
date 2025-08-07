@@ -24,7 +24,9 @@ describe("local.get", () => {
 describe("numeric instruction", () => {
 	test("i32.add", () => {
 		const out = check(numericInstruction.parse(input("i32.add")));
-		expect(out.node).toEqual(o({ type: "NumericInstruction", op: "i32.add" }));
+		expect(out.node).toEqual(
+			o({ type: "NumericSimpleInstruction", op: "i32.add" }),
+		);
 	});
 });
 
@@ -36,7 +38,7 @@ describe("folded plain instruction", () => {
 		expect(out.node).toEqual(
 			o({
 				type: "FoldedPlainInstruction",
-				operator: o({ type: "NumericInstruction", op: "i32.add" }),
+				operator: o({ type: "NumericSimpleInstruction", op: "i32.add" }),
 				operands: [
 					o({
 						type: "FoldedPlainInstruction",

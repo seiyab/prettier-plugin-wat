@@ -107,7 +107,7 @@ describe("function", () => {
 				instructions: [
 					o({ op: "local.get", index: o({ value: "$lhs" }) }),
 					o({ op: "local.get", index: o({ value: "$rhs" }) }),
-					o({ op: "i32.add", type: "NumericInstruction" }),
+					o({ op: "i32.add", type: "NumericSimpleInstruction" }),
 				],
 			}),
 		);
@@ -137,7 +137,7 @@ describe("function", () => {
 				instructions: [
 					o({ op: "local.get", index: o({ value: "$lhs" }) }),
 					o({ op: "local.get", index: o({ value: "$rhs" }) }),
-					o({ op: "i32.add", type: "NumericInstruction" }),
+					o({ op: "i32.add", type: "NumericSimpleInstruction" }),
 				],
 				comments: [
 					o({ type: "Comment", kind: "block", content: " comment 1 " }),

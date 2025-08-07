@@ -61,9 +61,9 @@ export const print: Printer<WatNode>["print"] = (
 		}
 		case "VariableInstruction":
 			return [node.op, " ", path.call(print, "index")];
-		case "NumericInstruction":
+		case "NumericSimpleInstruction":
 			return node.op;
-		case "ConstInstruction":
+		case "NumericConstInstruction":
 			return [node.op, " ", path.call(print, "val")];
 		case "Comment":
 			throw new Error("should not be reached if printComment is defined");

@@ -62,24 +62,41 @@ export const memarg: Parser<Memarg> = do_(($) => {
 	return { type: "Memarg", offset: dropNone(offset), align: dropNone(align) };
 });
 
-export type NumericInstruction = { type: "NumericInstruction"; op: string };
+export type NumericInstruction =
+	| NumericSimpleInstruction
+	| NumericConstInstruction;
 
-export const numericInstruction: Parser<NumericInstruction> = do_(($) => {
-	const op = $(oneOf([literal("i32.add"), literal("i32.ge_s")])).value;
-	return { type: "NumericInstruction", op };
-});
+export type NumericSimpleInstruction = {
+	type: "NumericSimpleInstruction";
+	op: string;
+};
 
-export type ConstInstruction = {
-	type: "ConstInstruction";
+export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
+	($) => {
+		const op = $(oneOf([literal("i32.add"), literal("i32.ge_s")])).value;
+		return { type: "NumericSimpleInstruction", op };
+	},
+);
+
+export type NumericConstInstruction = {
+	type: "NumericConstInstruction";
 	op: "i32.const";
 	val: AST<Integer>;
 };
 
-export const constInstruction: Parser<ConstInstruction> = do_(($) => {
-	const op = $(literal("i32.const")).value as "i32.const";
-	const val = $(integer);
-	return { type: "ConstInstruction", op, val };
-});
+export const numericConstInstruction: Parser<NumericConstInstruction> = do_(
+	($) => {
+		const op = $(literal("i32.const")).value as "i32.const";
+		const val = $(integer);
+		return { type: "NumericConstInstruction", op, val };
+	},
+);
+
+export const numericInstruction: Parser<NumericInstruction> =
+	oneOf<NumericInstruction>([
+		numericSimpleInstruction,
+		numericConstInstruction,
+	]);
 
 export type VectorInstruction =
 	| VectorSimpleInstruction
@@ -153,14 +170,11 @@ export const vectorInstruction = oneOf<VectorInstruction>([
 type PlainInstruction =
 	| VariableInstruction
 	| NumericInstruction
-	| ConstInstruction
-	| VectorInstruction
-	| VectorConstInstruction;
+	| VectorInstruction;
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([
 		variableInstruction,
 		numericInstruction,
-		constInstruction,
 		vectorInstruction,
 	]);
 
