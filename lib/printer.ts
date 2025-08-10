@@ -79,20 +79,19 @@ export const print: Printer<WatNode>["print"] = (
 				path.call(print, "desc"),
 				")",
 			]);
-		case "FuncImportDesc": {
+		case "ImportDesc": {
 			const parts: Doc[] = ["(", node.kind];
 			if (node.id) {
 				parts.push(" ", path.call(print, "id"));
 			}
-			parts.push(")");
-			return group(parts);
-		}
-		case "MemImportDesc": {
-			const parts: Doc[] = ["(", node.kind];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
+			switch (node.kind) {
+				case "func":
+					// TODO: print typeuse
+					break;
+				case "memory":
+					parts.push(" ", path.call(print, "target"));
+					break;
 			}
-			parts.push(" ", path.call(print, "memtype"));
 			parts.push(")");
 			return group(parts);
 		}
