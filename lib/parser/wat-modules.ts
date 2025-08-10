@@ -31,14 +31,7 @@ import {
 import { InstructionNode, instruction } from "./wat-instructions";
 import { Comment, gap } from "./wat-lexical-format";
 
-export type ModuleNodes =
-	| Program
-	| Module
-	| Function
-	| Import
-	| ImportDesc
-	| FuncImportDesc
-	| MemImportDesc;
+export type ModuleNodes = Program | Module | Function | Import | ImportDesc;
 export type ModuleElement = FunctionElement;
 
 export type Program = { type: "Program"; body: AST<Module>[] };
@@ -82,45 +75,40 @@ const exportdesc = do_(($): ExportDesc => {
 	return { type: "ExportDesc", kind, index: idx };
 });
 
-export type ImportDesc = FuncImportDesc | MemImportDesc;
-
-type FuncImportDesc = {
-	type: "FuncImportDesc";
-	kind: "func";
+type ImportDesc = {
+	type: "ImportDesc";
+	kind: string;
 	id?: AST<Identifier>;
-	// TODO: other import description types
-};
+	target: unknown;
+} & (
+	| { kind: "func"; target: undefined }
+	| { kind: "memory"; target: AST<MemType> }
+);
 
-type MemImportDesc = {
-	type: "MemImportDesc";
-	kind: "memory";
-	id?: AST<Identifier>;
-	memtype: AST<MemType>;
-};
-
-const funcimportdesc: Parser<FuncImportDesc> = do_(($) => {
+const funcimportdesc: Parser<ImportDesc> = do_(($) => {
 	void $(literal("("));
 	const kind = $(literal("func")).value as "func";
 	const id = $(opt(identifier));
 	void $(literal(")"));
 	return {
-		type: "FuncImportDesc",
+		type: "ImportDesc",
 		kind,
 		id: id.type === "None" ? undefined : id,
+		target: undefined, // TODO
 	};
 });
 
-const memimportdesc: Parser<MemImportDesc> = do_(($) => {
+const memimportdesc: Parser<ImportDesc> = do_(($) => {
 	void $(literal("("));
 	const kind = $(literal("memory")).value as "memory";
 	const id = $(opt(identifier));
 	const memtype_ = $(memtype);
 	void $(literal(")"));
 	return {
-		type: "MemImportDesc",
+		type: "ImportDesc",
 		kind,
 		id: id.type === "None" ? undefined : id,
-		memtype: memtype_,
+		target: memtype_,
 	};
 });
 
