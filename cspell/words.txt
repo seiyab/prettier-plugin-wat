@@ -1,0 +1,10 @@
+memtype
+exportdesc
+funcimportdesc
+memimportdesc
+modulefields
+importdesc
+functype
+valtype
+idchars
+spacechars
