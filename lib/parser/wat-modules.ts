@@ -17,10 +17,17 @@ import {
 	Index,
 	stringLiteral,
 	StringLiteral,
-	uInteger,
-	UInteger,
 } from "./wat-values";
-import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
+import {
+	MemType,
+	memtype,
+	param,
+	Param,
+	result,
+	Result,
+	valtype,
+	ValueType,
+} from "./wat-types";
 import { InstructionNode, instruction } from "./wat-instructions";
 import { Comment, gap } from "./wat-lexical-format";
 
@@ -73,23 +80,6 @@ const exportdesc = do_(($): ExportDesc => {
 	const idx = $(index);
 	void $(literal(")"));
 	return { type: "ExportDesc", kind, index: idx };
-});
-
-export type Limits = {
-	type: "Limits";
-	min: AST<UInteger>;
-	max?: AST<UInteger>;
-};
-const limits: Parser<Limits> = do_(($) => {
-	const min = $(uInteger);
-	const max = $(opt(uInteger));
-	return { type: "Limits", min, max: max.type === "None" ? undefined : max };
-});
-
-export type MemType = { type: "MemType"; limits: AST<Limits> };
-const memtype: Parser<MemType> = do_(($) => {
-	const limits_ = $(limits);
-	return { type: "MemType", limits: limits_ };
 });
 
 export type ImportDesc = FuncImportDesc | MemImportDesc;
@@ -207,7 +197,7 @@ export const function_: Parser<Function> = do_(($) => {
 	void $(literal("("));
 	void $(literal("func"));
 	const id = $(opt(identifier));
-	const expt = $(opt(inlineExport));
+	const ex = $(opt(inlineExport));
 	const params = m($(many(param))).nodes;
 	const results = m($(many(result))).nodes;
 	const locals = m($(many(local))).nodes;
@@ -216,7 +206,7 @@ export const function_: Parser<Function> = do_(($) => {
 	return {
 		type: "Function",
 		id: id.type === "None" ? undefined : id,
-		export_: expt.type === "None" ? undefined : expt,
+		export_: ex.type === "None" ? undefined : ex,
 		params,
 		locals,
 		results,

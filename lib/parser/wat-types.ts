@@ -1,6 +1,5 @@
 import { do_, literal, oneOf, opt, AST, Parser } from "./p";
-import { identifier, Identifier } from "./wat-values";
-import { Limits, MemType } from "./wat-modules";
+import { identifier, Identifier, uInteger, UInteger } from "./wat-values";
 
 export type TypeNodes =
 	| ValueType
@@ -40,4 +39,21 @@ export const result: Parser<Result> = do_(($) => {
 	const v = $(valtype);
 	void $(literal(")"));
 	return { type: "Result", v };
+});
+
+export type Limits = {
+	type: "Limits";
+	min: AST<UInteger>;
+	max?: AST<UInteger>;
+};
+const limits: Parser<Limits> = do_(($) => {
+	const min = $(uInteger);
+	const max = $(opt(uInteger));
+	return { type: "Limits", min, max: max.type === "None" ? undefined : max };
+});
+
+export type MemType = { type: "MemType"; limits: AST<Limits> };
+export const memtype: Parser<MemType> = do_(($) => {
+	const limits_ = $(limits);
+	return { type: "MemType", limits: limits_ };
 });
