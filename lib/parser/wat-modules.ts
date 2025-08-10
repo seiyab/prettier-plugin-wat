@@ -24,7 +24,14 @@ import { param, Param, result, Result, valtype, ValueType } from "./wat-types";
 import { InstructionNode, instruction } from "./wat-instructions";
 import { Comment, gap } from "./wat-lexical-format";
 
-export type ModuleNodes = Program | Module | Function;
+export type ModuleNodes =
+	| Program
+	| Module
+	| Function
+	| Import
+	| ImportDesc
+	| FuncImportDesc
+	| MemImportDesc;
 export type ModuleElement = FunctionElement;
 
 export type Program = { type: "Program"; body: AST<Module>[] };
@@ -85,26 +92,52 @@ const memtype: Parser<MemType> = do_(($) => {
 	return { type: "MemType", limits: limits_ };
 });
 
-export type ImportDesc = {
-	type: "ImportDesc";
-	kind: "func" | "table" | "memory" | "global";
+export type ImportDesc = FuncImportDesc | MemImportDesc;
+
+type FuncImportDesc = {
+	type: "FuncImportDesc";
+	kind: "func";
 	id?: AST<Identifier>;
-	memtype?: AST<MemType>; // for memory
 	// TODO: other import description types
 };
-const importdesc: Parser<ImportDesc> = do_(($) => {
+
+type MemImportDesc = {
+	type: "MemImportDesc";
+	kind: "memory";
+	id?: AST<Identifier>;
+	memtype: AST<MemType>;
+};
+
+const funcimportdesc: Parser<FuncImportDesc> = do_(($) => {
 	void $(literal("("));
-	const kind = $(literal("memory")).value as ImportDesc["kind"];
+	const kind = $(literal("func")).value as "func";
 	const id = $(opt(identifier));
-	const mem = $(memtype);
 	void $(literal(")"));
 	return {
-		type: "ImportDesc",
+		type: "FuncImportDesc",
 		kind,
 		id: id.type === "None" ? undefined : id,
-		memtype: mem,
 	};
 });
+
+const memimportdesc: Parser<MemImportDesc> = do_(($) => {
+	void $(literal("("));
+	const kind = $(literal("memory")).value as "memory";
+	const id = $(opt(identifier));
+	const memtype_ = $(memtype);
+	void $(literal(")"));
+	return {
+		type: "MemImportDesc",
+		kind,
+		id: id.type === "None" ? undefined : id,
+		memtype: memtype_,
+	};
+});
+
+const importdesc: Parser<ImportDesc> = oneOf<ImportDesc>([
+	funcimportdesc,
+	memimportdesc,
+]);
 
 export type Import = {
 	type: "Import";

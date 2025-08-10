@@ -22,7 +22,14 @@ import {
 } from "./wat-values";
 import { Comment } from "./wat-lexical-format";
 
-export type InstructionNode = PlainInstruction | FoldedInstruction;
+export type InstructionNode =
+	| PlainInstruction
+	| FoldedInstruction
+	| VectorInstruction
+	| VectorSimpleInstruction
+	| VectorMemoryInstruction
+	| VectorConstInstruction
+	| Memarg;
 
 export type VariableInstruction = {
 	type: "VariableInstruction";
@@ -100,7 +107,7 @@ export const numericInstruction: Parser<NumericInstruction> =
 
 export type VectorInstruction =
 	| VectorSimpleInstruction
-	| VecotrMemoryInstructoin
+	| VectorMemoryInstruction
 	| VectorConstInstruction;
 
 type VectorSimpleInstruction = { type: "VectorSimpleInstruction"; op: string };
@@ -125,13 +132,13 @@ const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = do_(
 	{ separator: nop },
 );
 
-export type VecotrMemoryInstructoin = {
-	type: "VecotrMemoryInstructoin";
+export type VectorMemoryInstruction = {
+	type: "VectorMemoryInstruction";
 	op: string;
 	memarg: AST<Memarg>;
 	laneindex?: AST<UInteger>;
 };
-const vectorMemoryInstruction: Parser<VecotrMemoryInstructoin> = do_(($) => {
+const vectorMemoryInstruction: Parser<VectorMemoryInstruction> = do_(($) => {
 	const op = $(
 		do_(
 			($) => {
@@ -144,7 +151,7 @@ const vectorMemoryInstruction: Parser<VecotrMemoryInstructoin> = do_(($) => {
 	).value;
 
 	const ma = $(memarg);
-	return { type: "VecotrMemoryInstructoin", op, memarg: ma };
+	return { type: "VectorMemoryInstruction", op, memarg: ma };
 });
 
 export type VectorConstInstruction = {

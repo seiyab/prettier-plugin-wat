@@ -1,7 +1,14 @@
 import { do_, literal, oneOf, opt, AST, Parser } from "./p";
 import { identifier, Identifier } from "./wat-values";
+import { Limits, MemType } from "./wat-modules";
 
-export type TypeNodes = ValueType | FunctionType;
+export type TypeNodes =
+	| ValueType
+	| FunctionType
+	| Param
+	| Result
+	| Limits
+	| MemType;
 
 export type ValueType = {
 	type: "ValueType";

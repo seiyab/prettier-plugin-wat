@@ -69,7 +69,74 @@ export const print: Printer<WatNode>["print"] = (
 			throw new Error("should not be reached if printComment is defined");
 		case "FoldedIfInstruction":
 			return printFoldedIfInstruction(node, path, print);
+		case "Import":
+			return group([
+				"(import ",
+				path.call(print, "module"),
+				" ",
+				path.call(print, "name"),
+				" ",
+				path.call(print, "desc"),
+				")",
+			]);
+		case "FuncImportDesc": {
+			const parts: Doc[] = ["(", node.kind];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			parts.push(")");
+			return group(parts);
+		}
+		case "MemImportDesc": {
+			const parts: Doc[] = ["(", node.kind];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			parts.push(" ", path.call(print, "memtype"));
+			parts.push(")");
+			return group(parts);
+		}
+		case "MemType":
+			return path.call(print, "limits");
+		case "Limits": {
+			const parts: Doc[] = [path.call(print, "min")];
+			if (node.max) {
+				parts.push(" ", path.call(print, "max"));
+			}
+			return group(parts);
+		}
+		case "UInteger":
+			return node.text;
+		case "VectorMemoryInstruction": {
+			const parts: Doc[] = [node.op];
+			if (node.memarg) {
+				parts.push(" ", path.call(print, "memarg"));
+			}
+			return group(parts);
+		}
+		case "Memarg": {
+			const parts: Doc[] = [];
+			if (node.offset) {
+				parts.push(["offset=", path.call(print, "offset")]);
+			}
+			if (node.align) {
+				parts.push(" ", ["align=", path.call(print, "align")]);
+			}
+			return group(parts);
+		}
+		case "VectorConstInstruction": {
+			const parts: Doc[] = [
+				node.op,
+				" ",
+				node.lanetype,
+				indent([line, join(line, path.map(print, "vals"))]),
+			];
+			return group(parts);
+		}
+		case "VectorSimpleInstruction":
+			return node.op;
 		default:
+			// @ts-expect-error -- all nodes should be handled
 			throw new Error(`Unknown node type: ${node.type}`);
 	}
 };
