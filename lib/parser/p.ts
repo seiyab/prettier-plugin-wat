@@ -130,18 +130,21 @@ export function do_<T extends Node>(
 		}
 
 		function $<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
+			let localInput = currentInput;
+			let localComments: AST<Comment>[] = [];
 			if (separator != null && input.index !== currentInput.index) {
-				const g = separator.parse(currentInput);
+				const g = separator.parse(localInput);
 				if (!(g instanceof Error)) {
-					currentInput = g.nextInput;
-					comments.push(...(g.node.comments ?? []));
+					localInput = g.nextInput;
+					localComments = g.node.comments ?? [];
 				}
 			}
-			const out = parser(p).parse(currentInput);
+			const out = parser(p).parse(localInput);
 			if (out instanceof ParseError) throw new Interrupt(out);
 			if (out instanceof Error)
 				throw new Interrupt(new ParseError(out, currentInput));
 			currentInput = out.nextInput;
+			comments.push(...localComments);
 			return out.node;
 		}
 	}
