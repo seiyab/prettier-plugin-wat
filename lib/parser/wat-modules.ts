@@ -9,6 +9,7 @@ import {
 	oneOf,
 	Many,
 	Node,
+	dropNone,
 } from "./p";
 import {
 	identifier,
@@ -31,7 +32,15 @@ import {
 import { InstructionNode, instruction } from "./wat-instructions";
 import { Comment, gap } from "./wat-lexical-format";
 
-export type ModuleNodes = Program | Module | Function | Import | ImportDesc;
+export type ModuleNodes =
+	| Program
+	| Module
+	| Function
+	| Import
+	| ImportDesc
+	| Memory
+	| OffsetAbbreviation
+	| DataSegment;
 export type ModuleElement = FunctionElement;
 
 export type Program = { type: "Program"; body: AST<Module>[] };
@@ -133,13 +142,78 @@ export const import_: Parser<Import> = do_(($) => {
 	return { type: "Import", module: mod, name, desc };
 });
 
+export type Memory = {
+	type: "Memory";
+	id?: AST<Identifier>;
+	export?: AST<InlineExport>;
+	memtype: AST<MemType>;
+};
+
+const memory_: Parser<Memory> = do_(($) => {
+	void $(literal("("));
+	void $(literal("memory"));
+	const id = $(opt(identifier));
+	const ex = $(opt(inlineExport));
+	const mt = $(memtype);
+	void $(literal(")"));
+	return {
+		type: "Memory",
+		id: id.type === "None" ? undefined : id,
+		export: ex.type === "None" ? undefined : ex,
+		memtype: mt,
+	};
+});
+
+export type DataSegment = {
+	type: "DataSegment";
+	memuse?: AST<Memuse>;
+	offset: AST<OffsetAbbreviation>;
+	inits: AST<StringLiteral>[];
+};
+
+const data: Parser<DataSegment> = do_(($) => {
+	void $(literal("("));
+	void $(literal("data"));
+	const mu = $(opt(memuse));
+	const offset = $(offsetAbbreviation);
+	const inits = $(many(stringLiteral));
+	void $(literal(")"));
+	return {
+		type: "DataSegment",
+		memuse: dropNone(mu),
+		offset,
+		inits: inits.nodes,
+		comments: inits.comments,
+	};
+});
+
+type Memuse = { type: "memuse"; memidx: AST<Index> };
+const memuse: Parser<Memuse> = do_(($) => {
+	void $(literal("("));
+	void $(literal("memory"));
+	const memidx = $(index);
+	void $(literal(")"));
+	return { type: "memuse", memidx };
+});
+
+type OffsetAbbreviation = {
+	type: "OffsetAbbreviation";
+	instr: AST<InstructionNode>;
+};
+const offsetAbbreviation: Parser<OffsetAbbreviation> = do_(($) => {
+	void $(literal("("));
+	const instr = $(instruction);
+	void $(literal(")"));
+	return { type: "OffsetAbbreviation", instr };
+});
+
 export type Module = {
 	type: "Module";
 	id?: AST<Identifier>;
 	modulefields: AST<ModuleField>[];
 };
 // TODO: other modulefields
-type ModuleField = Export | Function | Import;
+type ModuleField = Export | Function | Import | Memory | DataSegment;
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
@@ -147,7 +221,9 @@ export const module_: Parser<Module> = do_(($) => {
 	const modulefields: AST<ModuleField>[] = [];
 	for (;;) {
 		if (!$.peek(literal("("))) break;
-		modulefields.push($(oneOf<ModuleField>([export_, function_, import_])));
+		modulefields.push(
+			$(oneOf<ModuleField>([export_, function_, import_, memory_, data])),
+		);
 	}
 	void $(literal(")"));
 	return {

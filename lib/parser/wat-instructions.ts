@@ -174,15 +174,32 @@ export const vectorInstruction = oneOf<VectorInstruction>([
 	vectorConstInstruction,
 ]);
 
+export type MemoryInstruction = {
+	type: "MemoryInstruction";
+	op: "memory.grow" | "memory.size" | "memory.fill";
+};
+export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
+	const op = $(
+		oneOf([
+			literal("memory.grow"),
+			literal("memory.size"),
+			literal("memory.fill"),
+		]),
+	).value as MemoryInstruction["op"];
+	return { type: "MemoryInstruction", op };
+});
+
 type PlainInstruction =
 	| VariableInstruction
 	| NumericInstruction
-	| VectorInstruction;
+	| VectorInstruction
+	| MemoryInstruction;
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([
 		variableInstruction,
 		numericInstruction,
 		vectorInstruction,
+		memoryInstruction,
 	]);
 
 export const instruction: Parser<InstructionNode> = do_(($) =>

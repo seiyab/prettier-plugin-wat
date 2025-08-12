@@ -8,6 +8,7 @@ const files = [
 	"add-not-folded/add-not-folded.wat",
 	"if-expr/ifexpr.wat",
 	"endian-flip/endianflip.wat",
+	"memory-basics/memory-basics.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..");

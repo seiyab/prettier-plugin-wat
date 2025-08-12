@@ -7,11 +7,26 @@ export const uInteger: Parser<UInteger> = parser(
 	(input): ParserOutput<UInteger> => {
 		const { source, index } = input;
 		let i = index;
-		while (i < source.length && source[i] >= "0" && source[i] <= "9") {
-			i++;
+		if (source.substring(i, i + 2) === "0x") {
+			const hexStartIndex = i + 2;
+			i += 2;
+			while (
+				i < source.length &&
+				((source[i] >= "0" && source[i] <= "9") ||
+					(source[i] >= "a" && source[i] <= "f") ||
+					(source[i] >= "A" && source[i] <= "F"))
+			) {
+				i++;
+			}
+			if (i === hexStartIndex) return new Error(`expected hex digit`);
+		} else {
+			const digitStartIndex = i;
+			while (i < source.length && source[i] >= "0" && source[i] <= "9") {
+				i++;
+			}
+			if (i === digitStartIndex) return new Error(`expected digit`);
 		}
-		if (i === index)
-			return new Error(`expected digit, but found ${source[index]}`);
+		if (i === index) return new Error("not a uinteger");
 		const text = source.substring(index, i);
 		return {
 			node: { type: "UInteger", text },
@@ -28,11 +43,30 @@ export const integer: Parser<Integer> = parser(
 		if (source[i] === "+" || source[i] === "-") {
 			i++;
 		}
-		while (i < source.length && source[i] >= "0" && source[i] <= "9") {
-			i++;
+
+		const contentStartIndex = i;
+		if (source.substring(i, i + 2) === "0x") {
+			i += 2;
+			const hexStartIndex = i;
+			while (
+				i < source.length &&
+				((source[i] >= "0" && source[i] <= "9") ||
+					(source[i] >= "a" && source[i] <= "f") ||
+					(source[i] >= "A" && source[i] <= "F"))
+			) {
+				i++;
+			}
+			if (i === hexStartIndex) return new Error(`expected hex digit`);
+		} else {
+			const digitStartIndex = i;
+			while (i < source.length && source[i] >= "0" && source[i] <= "9") {
+				i++;
+			}
+			if (i === digitStartIndex) return new Error(`expected digit`);
 		}
-		if (i === index)
-			return new Error(`expected digit, but found ${source[index]}`);
+
+		if (i === contentStartIndex) return new Error("not an integer");
+
 		const text = source.substring(index, i);
 		return { node: { type: "Integer", text }, nextInput: { source, index: i } };
 	},
@@ -71,11 +105,26 @@ export const stringLiteral: Parser<StringLiteral> = parser(
 		const { source, index } = input;
 		if (source[index] !== '"') return new Error('Expected "');
 		let i = index + 1;
+		let value = "";
 		while (i < source.length && source[i] !== '"') {
-			i++;
+			if (source[i] === "\\") {
+				i++;
+				if (i >= source.length) return new Error("Unterminated string literal");
+				const hex = source.substring(i, i + 2);
+				if (!/^[0-9a-fA-F]{2}$/.test(hex)) {
+					// It's not a hex escape, so just treat it as a regular escape.
+					value += `\\${source[i]}`;
+					i++;
+				} else {
+					value += `\\${hex}`;
+					i += 2;
+				}
+			} else {
+				value += source[i];
+				i++;
+			}
 		}
 		if (source[i] !== '"') return new Error("Unterminated string literal");
-		const value = source.substring(index + 1, i);
 		return {
 			node: { type: "StringLiteral", value },
 			nextInput: { source, index: i + 1 },

@@ -2,7 +2,7 @@ import { Doc, doc, Printer } from "prettier";
 import { WatNode } from "./parser/wat";
 import { Print } from "./types";
 import { printFunction } from "./print-function";
-import { printFoldedIfInstruction } from "./print-folded-if-struction";
+import { printFoldedIfInstruction } from "./print-folded-if-instruction";
 
 const { group, indent, softline, hardline, join, line } = doc.builders;
 
@@ -134,8 +134,38 @@ export const print: Printer<WatNode>["print"] = (
 		}
 		case "VectorSimpleInstruction":
 			return node.op;
+		case "Memory": {
+			const parts: Doc[] = ["(memory"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			if (node.export) {
+				parts.push(" ", path.call(print, "export"));
+			}
+			parts.push(" ", path.call(print, "memtype"));
+			parts.push(")");
+			return group(parts);
+		}
+		case "DataSegment": {
+			const parts: Doc[] = ["(data"];
+			if (node.memuse) {
+				parts.push(" ", path.call(print, "memuse"));
+			}
+			parts.push(" ", path.call(print, "offset"));
+			if (node.inits.length > 0) {
+				parts.push(indent([line, join(line, path.map(print, "inits"))]));
+			}
+			parts.push(")");
+			return group(parts);
+		}
+		case "OffsetAbbreviation": {
+			return group(["(", path.call(print, "instr"), ")"]);
+		}
+		case "MemoryInstruction": {
+			return [node.op];
+		}
 		default:
-			// @ts-expect-error -- all nodes should be handled
+			// @ts-expect-error -- all known types are handled
 			throw new Error(`Unknown node type: ${node.type}`);
 	}
 };
