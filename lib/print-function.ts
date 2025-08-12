@@ -10,12 +10,12 @@ export function printFunction(
 	path: AstPath<WatNode>,
 	print: Print,
 ): Doc {
-	const parts: Doc[] = ["(func"];
+	const signature: Doc[] = ["(func"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		signature.push(" ", path.call(print, "id"));
 	}
 	if (node.export_) {
-		parts.push(" ", path.call(print, "export_"));
+		signature.push(" ", path.call(print, "export_"));
 	}
 	const typeuse: Doc[] = [];
 	if (node.params.length > 0) {
@@ -25,8 +25,9 @@ export function printFunction(
 		typeuse.push(group(join(line, path.map(print, "results"))));
 	}
 	if (typeuse.length > 0) {
-		parts.push(indent([line, group(join(line, typeuse))]));
+		signature.push(indent([line, group(join(line, typeuse))]));
 	}
+	const parts: Doc[] = [group(signature)];
 	if (node.locals.length > 0) {
 		parts.push(indent([line, group(join(line, path.map(print, "locals")))]));
 	}

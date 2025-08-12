@@ -10,8 +10,7 @@
   ;; memory offset.
   ;; Assumes the buffer contains four 4-byte words. The result is written
   ;; in-place into the same memory offset.
-  (func $endianflip (export "endianflip")
-    (param $offset i32)
+  (func $endianflip (export "endianflip") (param $offset i32)
     (v128.store
       (local.get $offset)
       (i8x16.swizzle

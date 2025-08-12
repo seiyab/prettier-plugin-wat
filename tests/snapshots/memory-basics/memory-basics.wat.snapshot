@@ -17,18 +17,15 @@
   (data (i32.const 0x020) "\01\03\05\07\09\0B\0D\0F")
   ;; Grow the linear memory by $delta pages; return the size (in pages) of
   ;; memory before it was increased.
-  (func (export "wasm_grow")
-    (param $delta i32) (result i32)
+  (func (export "wasm_grow") (param $delta i32) (result i32)
     (memory.grow (local.get $delta))
   )
   ;; Report the size of wasm's linear memory, in pages.
-  (func (export "wasm_size")
-    (result i32)
+  (func (export "wasm_size") (result i32)
     memory.size
   )
   ;; Fill memory starting at $start with $n instance of byte $val.
-  (func (export "wasm_fill")
-    (param $start i32) (param $val i32) (param $n i32)
+  (func (export "wasm_fill") (param $start i32) (param $val i32) (param $n i32)
     (memory.fill (local.get $start) (local.get $val) (local.get $n))
   )
 )
