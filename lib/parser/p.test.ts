@@ -4,7 +4,7 @@ import { check, input } from "./testing";
 
 describe("oneOf", () => {
 	test("found first", () => {
-		const p = oneOf([literal("a"), literal("b")]);
+		const p = oneOf(["a", "b"].map(literal));
 		const out = check(p.parse(input("a")));
 		expect(out.node).toEqual({
 			type: "Literal",
@@ -13,7 +13,7 @@ describe("oneOf", () => {
 		});
 	});
 	test("found second", () => {
-		const p = oneOf([literal("a"), literal("b")]);
+		const p = oneOf(["a", "b"].map(literal));
 		const out = check(p.parse(input("b")));
 		expect(out.node).toEqual({
 			type: "Literal",
@@ -22,7 +22,7 @@ describe("oneOf", () => {
 		});
 	});
 	test("not found", () => {
-		const p = oneOf([literal("a"), literal("b")]);
+		const p = oneOf(["a", "b"].map(literal));
 		const out = p.parse(input("c"));
 		expect(out).toBeInstanceOf(Error);
 	});

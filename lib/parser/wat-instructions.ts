@@ -80,7 +80,7 @@ export type NumericSimpleInstruction = {
 
 export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 	($) => {
-		const op = $(oneOf([literal("i32.add"), literal("i32.ge_s")])).value;
+		const op = $(oneOf(["i32.add", "i32.ge_s"].map(literal))).value;
 		return { type: "NumericSimpleInstruction", op };
 	},
 );
@@ -93,7 +93,7 @@ export type NumericConstInstruction = {
 
 export const numericConstInstruction: Parser<NumericConstInstruction> = do_(
 	($) => {
-		const op = $(literal("i32.const")).value as "i32.const";
+		const op = $(literal("i32.const")).value;
 		const val = $(integer);
 		return { type: "NumericConstInstruction", op, val };
 	},

@@ -96,7 +96,7 @@ type ImportDesc = {
 
 const funcimportdesc: Parser<ImportDesc> = do_(($) => {
 	void $(literal("("));
-	const kind = $(literal("func")).value as "func";
+	const kind = $(literal("func")).value;
 	const id = $(opt(identifier));
 	void $(literal(")"));
 	return {
@@ -109,7 +109,7 @@ const funcimportdesc: Parser<ImportDesc> = do_(($) => {
 
 const memimportdesc: Parser<ImportDesc> = do_(($) => {
 	void $(literal("("));
-	const kind = $(literal("memory")).value as "memory";
+	const kind = $(literal("memory")).value;
 	const id = $(opt(identifier));
 	const memtype_ = $(memtype);
 	void $(literal(")"));

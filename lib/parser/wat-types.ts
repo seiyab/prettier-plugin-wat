@@ -14,10 +14,8 @@ export type ValueType = {
 	value: "i32" | "i64" | "f32" | "f64";
 };
 export const valtype: Parser<ValueType> = do_(($) => {
-	const out = $(
-		oneOf([literal("i32"), literal("i64"), literal("f32"), literal("f64")]),
-	);
-	return { type: "ValueType", value: out.value as ValueType["value"] };
+	const out = $(oneOf((["i32", "i64", "f32", "f64"] as const).map(literal)));
+	return { type: "ValueType", value: out.value };
 });
 
 type FunctionType = Param | Result; // TODO: functype

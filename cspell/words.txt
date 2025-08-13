@@ -4,6 +4,7 @@ functype
 idchars
 importdesc
 hardline
+laneindex
 lanetype
 memarg
 memimportdesc
