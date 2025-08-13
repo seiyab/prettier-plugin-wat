@@ -127,7 +127,7 @@ export const print: Printer<WatNode>["print"] = (
 			const parts: Doc[] = [
 				node.op,
 				" ",
-				node.lanetype,
+				node.shape,
 				indent([line, join(line, path.map(print, "vals"))]),
 			];
 			return group(parts);

@@ -113,11 +113,7 @@ export type VectorInstruction =
 type VectorSimpleInstruction = { type: "VectorSimpleInstruction"; op: string };
 const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = do_(
 	($) => {
-		const type = $(
-			oneOf(
-				["i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2"].map(literal),
-			),
-		);
+		const shape = $(oneOf(shapes.map(literal)));
 		void $(literal("."));
 		const op = $(
 			oneOf(
@@ -127,7 +123,10 @@ const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = do_(
 			),
 		);
 
-		return { type: "VectorSimpleInstruction", op: `${type.value}.${op.value}` };
+		return {
+			type: "VectorSimpleInstruction",
+			op: `${shape.value}.${op.value}`,
+		};
 	},
 	{ separator: nop },
 );
@@ -143,7 +142,7 @@ const vectorMemoryInstruction: Parser<VectorMemoryInstruction> = do_(($) => {
 		do_(
 			($) => {
 				void $(literal("v128."));
-				const ls = $(oneOf([literal("load"), literal("store")]));
+				const ls = $(oneOf(["load", "store"].map(literal)));
 				return { type: "Temporal", value: `v128.${ls.value}` };
 			},
 			{ separator: nop },
@@ -157,15 +156,21 @@ const vectorMemoryInstruction: Parser<VectorMemoryInstruction> = do_(($) => {
 export type VectorConstInstruction = {
 	type: "VectorConstInstruction";
 	op: "v128.const";
-	lanetype: "i8x16";
+	shape: Shape;
 	vals: AST<Integer>[];
 };
 
 const vectorConstInstruction: Parser<VectorConstInstruction> = do_(($) => {
-	const op = $(literal("v128.const")).value as "v128.const";
-	const lanetype = $(literal("i8x16")).value as "i8x16";
+	const op = $(literal("v128.const")).value;
+	const shape = $(oneOf(shapes.map(literal))).value;
 	const vals = $(many(integer));
-	return { type: "VectorConstInstruction", op, lanetype, vals: vals.nodes };
+	return {
+		type: "VectorConstInstruction",
+		op,
+		shape,
+		vals: vals.nodes,
+		comments: vals.comments,
+	};
 });
 
 export const vectorInstruction = oneOf<VectorInstruction>([
@@ -174,18 +179,19 @@ export const vectorInstruction = oneOf<VectorInstruction>([
 	vectorConstInstruction,
 ]);
 
+type Shape = (typeof shapes)[number];
+const shapes = ["i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2"] as const;
+
 export type MemoryInstruction = {
 	type: "MemoryInstruction";
 	op: "memory.grow" | "memory.size" | "memory.fill";
 };
 export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
 	const op = $(
-		oneOf([
-			literal("memory.grow"),
-			literal("memory.size"),
-			literal("memory.fill"),
-		]),
-	).value as MemoryInstruction["op"];
+		oneOf(
+			(["memory.grow", "memory.size", "memory.fill"] as const).map(literal),
+		),
+	).value;
 	return { type: "MemoryInstruction", op };
 });
 

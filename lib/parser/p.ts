@@ -154,11 +154,11 @@ export function nop(input: ParserInput): ParserOutput<None> {
 	return { node: { type: "None" }, nextInput: input };
 }
 
-type Literal = { type: "Literal"; value: string };
-export function literal(s: string): Parser<Literal> {
+type Literal<S extends string = string> = { type: "Literal"; value: S };
+export function literal<S extends string>(s: S): Parser<Literal<S>> {
 	return parser(parse);
 
-	function parse({ source, index }: ParserInput): ParserOutput<Literal> {
+	function parse({ source, index }: ParserInput): ParserOutput<Literal<S>> {
 		if (source.startsWith(s, index))
 			return {
 				node: { type: "Literal", value: s },
