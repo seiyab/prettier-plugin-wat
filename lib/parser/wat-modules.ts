@@ -10,6 +10,7 @@ import {
 	Many,
 	Node,
 	dropNone,
+	commentCollector,
 } from "./p";
 import {
 	identifier,
@@ -34,6 +35,7 @@ import { Comment, gap } from "./wat-lexical-format";
 
 export type ModuleNodes =
 	| Program
+	| TypeUse
 	| Module
 	| Function
 	| Import
@@ -56,6 +58,37 @@ export const program: Parser<Program> = do_(($) => {
 	comments.push(...$(gap).comments);
 	void $(eof);
 	return { type: "Program", body, comments };
+});
+
+export type TypeUse = {
+	type: "TypeUse";
+	index?: Index;
+	params: AST<Param>[];
+	results: AST<Result>[];
+};
+export const typeuse: Parser<TypeUse> = do_(($) => {
+	const c = commentCollector();
+	const idx = $(
+		opt(
+			do_(($) => {
+				void $(literal("("));
+				void $(literal("type"));
+				const i = $(index);
+				void $(literal(")"));
+				return i;
+			}),
+		),
+	);
+	const params = c.drain($(many(param))).nodes;
+	const results = c.drain($(many(result))).nodes;
+
+	return {
+		type: "TypeUse",
+		index: dropNone(idx),
+		params,
+		results,
+		comments: c.comments(),
+	};
 });
 
 export type Export = {
@@ -84,26 +117,36 @@ const exportdesc = do_(($): ExportDesc => {
 	return { type: "ExportDesc", kind, index: idx };
 });
 
+type FuncSignature = { params: AST<Param>[]; results: AST<Result>[] };
+
 type ImportDesc = {
 	type: "ImportDesc";
 	kind: string;
 	id?: AST<Identifier>;
 	target: unknown;
 } & (
-	| { kind: "func"; target: undefined }
+	| { kind: "func"; target: FuncSignature }
 	| { kind: "memory"; target: AST<MemType> }
 );
 
 const funcimportdesc: Parser<ImportDesc> = do_(($) => {
+	const comments: AST<Comment>[] = [];
+	const m = <T extends Node>(mn: AST<Many<T>>): AST<Many<T>> => {
+		comments.push(...(mn.comments ?? []));
+		return mn;
+	};
 	void $(literal("("));
 	const kind = $(literal("func")).value;
 	const id = $(opt(identifier));
+	const params = m($(many(param))).nodes;
+	const results = m($(many(result))).nodes;
 	void $(literal(")"));
 	return {
 		type: "ImportDesc",
 		kind,
 		id: id.type === "None" ? undefined : id,
-		target: undefined, // TODO
+		target: { params, results },
+		comments,
 	};
 });
 
@@ -207,13 +250,30 @@ const offsetAbbreviation: Parser<OffsetAbbreviation> = do_(($) => {
 	return { type: "OffsetAbbreviation", instr };
 });
 
+export type Global = {
+	type: "Global";
+	id?: AST<Identifier>;
+	globaltype: AST<ValueType>; // TODO: mut
+	expr: AST<InstructionNode>[];
+};
+const global_: Parser<Global> = do_(($) => {
+	const c = commentCollector();
+	void $(literal("("));
+	void $(literal("global"));
+	const id = $(opt(identifier));
+	const globaltype = $(valtype);
+	const expr = c.drain($(many(instruction))).nodes;
+	void $(literal(")"));
+	return { type: "Global", id: dropNone(id), globaltype, expr };
+});
+
 export type Module = {
 	type: "Module";
 	id?: AST<Identifier>;
 	modulefields: AST<ModuleField>[];
 };
 // TODO: other modulefields
-type ModuleField = Export | Function | Import | Memory | DataSegment;
+type ModuleField = Export | Function | Import | Memory | DataSegment | Global;
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
@@ -222,7 +282,16 @@ export const module_: Parser<Module> = do_(($) => {
 	for (;;) {
 		if (!$.peek(literal("("))) break;
 		modulefields.push(
-			$(oneOf<ModuleField>([export_, function_, import_, memory_, data])),
+			$(
+				oneOf<ModuleField>([
+					export_,
+					function_,
+					import_,
+					memory_,
+					data,
+					global_,
+				]),
+			),
 		);
 	}
 	void $(literal(")"));
@@ -247,35 +316,28 @@ export type Function = {
 	type: "Function";
 	id?: AST<Identifier>;
 	export_?: AST<InlineExport>;
-	params: AST<Param>[];
+	typeuse: AST<TypeUse>;
 	locals: AST<Local>[];
-	results: AST<Result>[];
 	instructions: AST<InstructionNode>[];
 };
 export const function_: Parser<Function> = do_(($) => {
-	const comments: AST<Comment>[] = [];
-	const m = <T extends Node>(mn: AST<Many<T>>): AST<Many<T>> => {
-		comments.push(...(mn.comments ?? []));
-		return mn;
-	};
+	const c = commentCollector();
 	void $(literal("("));
 	void $(literal("func"));
 	const id = $(opt(identifier));
 	const ex = $(opt(inlineExport));
-	const params = m($(many(param))).nodes;
-	const results = m($(many(result))).nodes;
-	const locals = m($(many(local))).nodes;
-	const instructions = m($(many(instruction))).nodes;
+	const tu = $(typeuse);
+	const locals = c.drain($(many(local))).nodes;
+	const instructions = c.drain($(many(instruction))).nodes;
 	void $(literal(")"));
 	return {
 		type: "Function",
 		id: id.type === "None" ? undefined : id,
 		export_: ex.type === "None" ? undefined : ex,
-		params,
+		typeuse: tu,
 		locals,
-		results,
 		instructions,
-		comments,
+		comments: c.comments(),
 	};
 });
 type FunctionElement = InlineExport;

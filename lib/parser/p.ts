@@ -88,7 +88,7 @@ type Tools = {
 type DoOptions = { separator: Parser<Node> | ParserFunc<Node> };
 
 export function do_<T extends Node>(
-	process: ($: Tools) => T,
+	process: ($: Tools) => T | Error,
 	opts?: DoOptions,
 ): Parser<T> {
 	class Interrupt extends Error {
@@ -120,6 +120,10 @@ export function do_<T extends Node>(
 
 		try {
 			const node = process($);
+			if (node instanceof Error) {
+				if (node instanceof ParseError) return node;
+				return new ParseError(node, currentInput);
+			}
 			return {
 				node: { ...node, comments: comments.concat(node.comments ?? []) },
 				nextInput: currentInput,
@@ -142,7 +146,7 @@ export function do_<T extends Node>(
 			const out = parser(p).parse(localInput);
 			if (out instanceof ParseError) throw new Interrupt(out);
 			if (out instanceof Error)
-				throw new Interrupt(new ParseError(out, currentInput));
+				throw new Interrupt(new ParseError(out, localInput));
 			currentInput = out.nextInput;
 			comments.push(...localComments);
 			return out.node;
@@ -226,3 +230,20 @@ export function dropNone<T extends Node>(n: AST<T | None>): AST<T> | undefined {
 	if (n.type !== "None") return n as AST<T>;
 	return undefined;
 }
+
+type CommentCollector = {
+	drain: <N extends Node>(t: AST<N>) => AST<N>;
+	comments: () => AST<Comment>[];
+};
+export const commentCollector = (): CommentCollector => {
+	const cs: AST<Comment>[] = [];
+	return { drain, comments };
+
+	function drain<N extends Node>(t: AST<N>): AST<N> {
+		cs.push(...(t.comments ?? []));
+		return { ...t, comments: [] };
+	}
+	function comments(): AST<Comment>[] {
+		return cs;
+	}
+};

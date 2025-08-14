@@ -3,6 +3,7 @@ import { WatNode } from "./parser/wat";
 import { Print } from "./types";
 import { printFunction } from "./print-function";
 import { printFoldedIfInstruction } from "./print-folded-if-instruction";
+import { printTypeUse } from "./print-typeuse";
 
 const { group, indent, softline, hardline, join, line } = doc.builders;
 
@@ -32,6 +33,9 @@ export const print: Printer<WatNode>["print"] = (
 		case "Function": {
 			return printFunction(node, path, print);
 		}
+		case "TypeUse": {
+			return printTypeUse(node, path, print);
+		}
 		case "Identifier":
 			return node.value;
 		case "Param":
@@ -43,7 +47,7 @@ export const print: Printer<WatNode>["print"] = (
 				")",
 			]);
 		case "Result":
-			return group(["(result ", path.call(print, "v"), ")"]);
+			return group(["(result ", join(line, path.map(print, "valtype")), ")"]);
 		case "ValueType":
 			return node.value;
 		case "InlineExport":

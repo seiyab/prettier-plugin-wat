@@ -1,12 +1,14 @@
 exportdesc
 funcimportdesc
 functype
+globaltype
 idchars
 importdesc
 hardline
 laneindex
 lanetype
 memarg
+memidx
 memimportdesc
 memtype
 memuse

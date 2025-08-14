@@ -1,4 +1,5 @@
 import { AstPath, doc, Doc } from "prettier";
+import {} from "prettier/doc";
 import { Function } from "./parser/wat-modules";
 import { Print } from "./types";
 import { WatNode } from "./parser/wat";
@@ -17,15 +18,9 @@ export function printFunction(
 	if (node.export_) {
 		signature.push(" ", path.call(print, "export_"));
 	}
-	const typeuse: Doc[] = [];
-	if (node.params.length > 0) {
-		typeuse.push(group(join(line, path.map(print, "params"))));
-	}
-	if (node.results.length > 0) {
-		typeuse.push(group(join(line, path.map(print, "results"))));
-	}
-	if (typeuse.length > 0) {
-		signature.push(indent([line, group(join(line, typeuse))]));
+	const typeuse = path.call(print, "typeuse");
+	if (typeuse !== "") {
+		signature.push(indent([line, typeuse]));
 	}
 	const parts: Doc[] = [group(signature)];
 	if (node.locals.length > 0) {

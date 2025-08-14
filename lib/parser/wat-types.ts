@@ -1,4 +1,13 @@
-import { do_, literal, oneOf, opt, AST, Parser } from "./p";
+import {
+	do_,
+	literal,
+	oneOf,
+	opt,
+	AST,
+	Parser,
+	commentCollector,
+	many,
+} from "./p";
 import { identifier, Identifier, uInteger, UInteger } from "./wat-values";
 
 export type TypeNodes =
@@ -30,13 +39,15 @@ export const param: Parser<Param> = do_(($) => {
 	return { type: "Param", id: id.type === "None" ? undefined : id, v };
 });
 
-export type Result = { type: "Result"; v: AST<ValueType> };
+export type Result = { type: "Result"; valtype: AST<ValueType>[] };
 export const result: Parser<Result> = do_(($) => {
+	const c = commentCollector();
 	void $(literal("("));
 	void $(literal("result"));
-	const v = $(valtype);
+	const v = c.drain($(many(valtype))).nodes;
+	if (v.length === 0) return Error("expected one or more valtypes");
 	void $(literal(")"));
-	return { type: "Result", v };
+	return { type: "Result", valtype: v, comments: c.comments() };
 });
 
 export type Limits = {

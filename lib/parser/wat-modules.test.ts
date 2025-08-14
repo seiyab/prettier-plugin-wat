@@ -54,11 +54,13 @@ describe("function", () => {
 			o({
 				type: "Function",
 				id: undefined,
-				params: [
-					o({ type: "Param", v: o({ type: "ValueType", value: "i32" }) }),
-					o({ type: "Param", v: o({ type: "ValueType", value: "f32" }) }),
-				],
-				results: [],
+				typeuse: o({
+					params: [
+						o({ type: "Param", v: o({ type: "ValueType", value: "i32" }) }),
+						o({ type: "Param", v: o({ type: "ValueType", value: "f32" }) }),
+					],
+					results: [],
+				}),
 				locals: [
 					o({ type: "Local", v: o({ type: "ValueType", value: "f64" }) }),
 				],
@@ -98,11 +100,13 @@ describe("function", () => {
 			o({
 				type: "Function",
 				id: o({ value: "$add" }),
-				params: [
-					o({ id: o({ value: "$lhs" }) }),
-					o({ id: o({ value: "$rhs" }) }),
-				],
-				results: [o({ v: o({ value: "i32" }) })],
+				typeuse: o({
+					params: [
+						o({ id: o({ value: "$lhs" }) }),
+						o({ id: o({ value: "$rhs" }) }),
+					],
+					results: [o({ valtype: [o({ value: "i32" })] })],
+				}),
 				locals: [],
 				instructions: [
 					o({ op: "local.get", index: o({ value: "$lhs" }) }),
@@ -128,11 +132,13 @@ describe("function", () => {
 			o({
 				type: "Function",
 				id: o({ value: "$add" }),
-				params: [
-					o({ id: o({ value: "$lhs" }) }),
-					o({ id: o({ value: "$rhs" }) }),
-				],
-				results: [o({ v: o({ value: "i32" }) })],
+				typeuse: o({
+					params: [
+						o({ id: o({ value: "$lhs" }) }),
+						o({ id: o({ value: "$rhs" }) }),
+					],
+					results: [o({ valtype: [o({ value: "i32" })] })],
+				}),
 				locals: [],
 				instructions: [
 					o({ op: "local.get", index: o({ value: "$lhs" }) }),
