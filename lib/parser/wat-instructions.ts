@@ -80,9 +80,44 @@ export type NumericSimpleInstruction = {
 
 export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 	($) => {
-		const op = $(oneOf(["i32.add", "i32.ge_s"].map(literal))).value;
-		return { type: "NumericSimpleInstruction", op };
+		const ty = $(oneOf(["i32", "i64", "f32", "f64"].map(literal))).value;
+		void $(literal("."));
+		const op = $(
+			oneOf(
+				[
+					"clz",
+					"ctz",
+					"popcnt",
+					"add",
+					"sub",
+					"mul",
+					"div_s",
+					"div_u",
+					"rem_s",
+					"rem_u",
+					"and",
+					"or",
+					"xor",
+					"shl",
+					"shr_s",
+					"shr_u",
+					"rotl",
+					"rotr",
+
+					"lt_s",
+					"lt_u",
+					"gt_s",
+					"gt_u",
+					"le_s",
+					"le_u",
+					"ge_s",
+					"ge_u",
+				].map(literal),
+			),
+		).value;
+		return { type: "NumericSimpleInstruction", op: `${ty}.${op}` };
 	},
+	{ separator: nop },
 );
 
 export type NumericConstInstruction = {
