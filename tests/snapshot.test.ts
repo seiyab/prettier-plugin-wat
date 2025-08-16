@@ -9,6 +9,7 @@ const files = [
 	"if-expr/ifexpr.wat",
 	"endian-flip/endianflip.wat",
 	"memory-basics/memory-basics.wat",
+	"itoa/itoa.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..");

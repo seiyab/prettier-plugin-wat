@@ -169,7 +169,6 @@ export const print: Printer<WatNode>["print"] = (
 			return [node.op];
 		}
 		default:
-			// @ts-expect-error -- all known types are handled
 			throw new Error(`Unknown node type: ${node.type}`);
 	}
 };

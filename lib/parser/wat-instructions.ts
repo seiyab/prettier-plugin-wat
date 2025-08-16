@@ -10,6 +10,7 @@ import {
 	Node,
 	dropNone,
 	nop,
+	commentCollector,
 } from "./p";
 import { Result, result } from "./wat-types";
 import {
@@ -21,15 +22,60 @@ import {
 	UInteger,
 } from "./wat-values";
 import { Comment } from "./wat-lexical-format";
+import { typeuse, TypeUse } from "./wat-modules";
 
 export type InstructionNode =
+	| ControlInstruction
 	| PlainInstruction
 	| FoldedInstruction
-	| VectorInstruction
-	| VectorSimpleInstruction
-	| VectorMemoryInstruction
-	| VectorConstInstruction
-	| Memarg;
+	| Memarg; // TODO: it's not a instruction
+
+export const instruction: Parser<InstructionNode> = do_(($) =>
+	$(
+		oneOf<InstructionNode>([
+			controlInstruction,
+			plainInstruction,
+			foldedInstrucion,
+		]),
+	),
+);
+
+type ControlInstruction = IfInstruction;
+const controlInstruction: Parser<ControlInstruction> = do_(($) =>
+	$(oneOf<ControlInstruction>([ifInstruction])),
+);
+
+type IfInstruction = {
+	type: "IfInstruction";
+	label?: AST<Index>;
+	blocktype: AST<TypeUse>;
+	then: AST<InstructionNode>[];
+	elseId?: AST<Index>;
+	else: AST<InstructionNode>[];
+	endId?: AST<Index>;
+};
+const ifInstruction: Parser<IfInstruction> = do_(($) => {
+	void $(literal("if"));
+	const c = commentCollector();
+	const label = $(opt(index));
+	const blocktype = $(typeuse);
+	const then = c.drain($(many(instruction))).nodes;
+	void $(literal("else"));
+	const elseId = $(opt(index));
+	const else_ = c.drain($(many(instruction))).nodes;
+	void $(literal("end"));
+	const endId = $(opt(index));
+	return {
+		type: "IfInstruction",
+		label: dropNone(label),
+		blocktype,
+		then,
+		elseId: dropNone(elseId),
+		else: else_,
+		endId: dropNone(endId),
+		comments: c.comments(),
+	};
+});
 
 export type VariableInstruction = {
 	type: "VariableInstruction";
@@ -242,10 +288,6 @@ export const plainInstruction: Parser<PlainInstruction> =
 		vectorInstruction,
 		memoryInstruction,
 	]);
-
-export const instruction: Parser<InstructionNode> = do_(($) =>
-	$(oneOf<InstructionNode>([plainInstruction, foldedInstrucion])),
-);
 
 export type FoldedIfInstruction = {
 	type: "FoldedIfInstruction";
