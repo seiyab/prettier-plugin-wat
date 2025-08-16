@@ -40,10 +40,66 @@ export const instruction: Parser<InstructionNode> = do_(($) =>
 	),
 );
 
-type ControlInstruction = IfInstruction;
+type ControlInstruction = IfInstruction | BlockInstruction | LoopInstruction;
 const controlInstruction: Parser<ControlInstruction> = do_(($) =>
-	$(oneOf<ControlInstruction>([ifInstruction])),
+	$(
+		oneOf<ControlInstruction>([
+			ifInstruction,
+			blockInstruction,
+			loopInstruction,
+		]),
+	),
 );
+
+type BlockInstruction = {
+	type: "BlockInstruction";
+	label?: AST<Index>;
+	blocktype: AST<TypeUse>;
+	instructions: AST<InstructionNode>[];
+	endId?: AST<Index>;
+};
+const blockInstruction: Parser<BlockInstruction> = do_(($) => {
+	void $(literal("block"));
+	const c = commentCollector();
+	const label = $(opt(index));
+	const blocktype = $(typeuse);
+	const instructions = c.drain($(many(instruction))).nodes;
+	void $(literal("end"));
+	const endId = $(opt(index));
+	return {
+		type: "BlockInstruction",
+		label: dropNone(label),
+		blocktype,
+		instructions,
+		endId: dropNone(endId),
+		comments: c.comments(),
+	};
+});
+
+type LoopInstruction = {
+	type: "LoopInstruction";
+	label?: AST<Index>;
+	blocktype: AST<TypeUse>;
+	instructions: AST<InstructionNode>[];
+	endId?: AST<Index>;
+};
+const loopInstruction: Parser<LoopInstruction> = do_(($) => {
+	void $(literal("loop"));
+	const c = commentCollector();
+	const label = $(opt(index));
+	const blocktype = $(typeuse);
+	const instructions = c.drain($(many(instruction))).nodes;
+	void $(literal("end"));
+	const endId = $(opt(index));
+	return {
+		type: "LoopInstruction",
+		label: dropNone(label),
+		blocktype,
+		instructions,
+		endId: dropNone(endId),
+		comments: c.comments(),
+	};
+});
 
 type IfInstruction = {
 	type: "IfInstruction";
