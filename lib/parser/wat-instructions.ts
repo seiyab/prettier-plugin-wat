@@ -198,11 +198,17 @@ export type VariableInstruction = {
 export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 	const op = $(
 		oneOf(
-			["local.get", "local.set", "local.tee", "global.get", "global.set"].map(
-				literal,
-			),
+			(
+				[
+					"local.get",
+					"local.set",
+					"local.tee",
+					"global.get",
+					"global.set",
+				] as const
+			).map(literal),
 		),
-	).value as VariableInstruction["op"];
+	).value;
 	void $.exclusive();
 	const idx = $<Index>(index);
 	return { type: "VariableInstruction", op, index: idx };
@@ -384,16 +390,37 @@ const shapes = ["i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2"] as const;
 
 export type MemoryInstruction = {
 	type: "MemoryInstruction";
-	op: "memory.grow" | "memory.size" | "memory.fill";
+	op: string;
+	arg?: AST<Memarg> | AST<Index>;
 };
 export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
-	const op = $(
-		oneOf(
-			(["memory.grow", "memory.size", "memory.fill"] as const).map(literal),
-		),
-	).value;
-	return { type: "MemoryInstruction", op };
+	const op = $(oneOf(memops)).value;
+	const arg =
+		op.includes("store") || op.includes("load") ? $(memarg) : undefined;
+	return { type: "MemoryInstruction", op, arg };
 });
+const memops = ["memory.grow", "memory.size", "memory.fill"]
+	.concat(
+		["i32", "i64"].flatMap((ty) =>
+			[
+				"load8_s",
+				"load8_u",
+				"load16_s",
+				"load16_u",
+				"load32_s",
+				"load32_u",
+				"store8",
+				"store16",
+				"store32",
+			].map((o) => `${ty}.${o}`),
+		),
+	)
+	.concat(
+		["i32", "i64", "f32", "f64"].flatMap((ty) =>
+			["load", "store"].map((o) => `${ty}.${o}`),
+		),
+	)
+	.map(literal);
 
 type PlainInstruction =
 	| PlainControlInstruction
