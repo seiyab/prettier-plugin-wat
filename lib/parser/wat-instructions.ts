@@ -396,10 +396,22 @@ export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
 	};
 });
 
-export type FoldedInstruction = FoldedPlainInstruction | FoldedIfInstruction;
-export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) =>
-	$(oneOf<FoldedInstruction>([foldedPlainInstruction, foldedIfInstruction])),
-);
+export type FoldedInstruction =
+	| FoldedPlainInstruction
+	| FoldedIfInstruction
+	| FoldedBlockInstruction
+	| FoldedLoopInstruction;
+export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) => {
+	if (!$.peek(literal("("))) return new Error("expected '('");
+	return $(
+		oneOf<FoldedInstruction>([
+			foldedBlockInstruction,
+			foldedLoopInstruction,
+			foldedPlainInstruction,
+			foldedIfInstruction,
+		]),
+	);
+});
 
 type FoldedPlainInstruction = {
 	type: "FoldedPlainInstruction";
@@ -412,4 +424,50 @@ const foldedPlainInstruction: Parser<FoldedPlainInstruction> = do_(($) => {
 	const { nodes: operands, comments } = $(many(foldedInstrucion));
 	void $(literal(")"));
 	return { type: "FoldedPlainInstruction", operator, operands, comments };
+});
+
+type FoldedBlockInstruction = {
+	type: "FoldedBlockInstruction";
+	label?: AST<Index>;
+	blocktype: AST<TypeUse>;
+	instructions: AST<InstructionNode>[];
+};
+const foldedBlockInstruction: Parser<FoldedBlockInstruction> = do_(($) => {
+	void $(literal("("));
+	void $(literal("block"));
+	const c = commentCollector();
+	const label = $(opt(index));
+	const blocktype = $(typeuse);
+	const instructions = c.drain($(many(instruction))).nodes;
+	void $(literal(")"));
+	return {
+		type: "FoldedBlockInstruction",
+		label: dropNone(label),
+		blocktype,
+		instructions,
+		comments: c.comments(),
+	};
+});
+
+type FoldedLoopInstruction = {
+	type: "FoldedLoopInstruction";
+	label?: AST<Index>;
+	blocktype: AST<TypeUse>;
+	instructions: AST<InstructionNode>[];
+};
+const foldedLoopInstruction: Parser<FoldedLoopInstruction> = do_(($) => {
+	void $(literal("("));
+	void $(literal("loop"));
+	const c = commentCollector();
+	const label = $(opt(index));
+	const blocktype = $(typeuse);
+	const instructions = c.drain($(many(instruction))).nodes;
+	void $(literal(")"));
+	return {
+		type: "FoldedLoopInstruction",
+		label: dropNone(label),
+		blocktype,
+		instructions,
+		comments: c.comments(),
+	};
 });

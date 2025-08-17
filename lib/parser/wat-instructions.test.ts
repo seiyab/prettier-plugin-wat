@@ -53,3 +53,65 @@ describe("folded plain instruction", () => {
 		);
 	});
 });
+
+describe("folded block instruction", () => {
+	test("(block (i32.add (local.get $a) (local.get $b)))", () => {
+		const out = check(
+			foldedInstrucion.parse(
+				input("(block (i32.add (local.get $a) (local.get $b)))"),
+			),
+		);
+		expect(out.node).toEqual(
+			o({
+				type: "FoldedBlockInstruction",
+				instructions: [
+					o({
+						type: "FoldedPlainInstruction",
+						operator: o({ type: "NumericSimpleInstruction", op: "i32.add" }),
+						operands: [
+							o({
+								type: "FoldedPlainInstruction",
+								operator: o({ type: "VariableInstruction" }),
+							}),
+							o({
+								type: "FoldedPlainInstruction",
+								operator: o({ type: "VariableInstruction" }),
+							}),
+						],
+					}),
+				],
+			}),
+		);
+	});
+});
+
+describe("folded loop instruction", () => {
+	test("(loop (i32.add (local.get $a) (local.get $b)))", () => {
+		const out = check(
+			foldedInstrucion.parse(
+				input("(loop (i32.add (local.get $a) (local.get $b)))"),
+			),
+		);
+		expect(out.node).toEqual(
+			o({
+				type: "FoldedLoopInstruction",
+				instructions: [
+					o({
+						type: "FoldedPlainInstruction",
+						operator: o({ type: "NumericSimpleInstruction", op: "i32.add" }),
+						operands: [
+							o({
+								type: "FoldedPlainInstruction",
+								operator: o({ type: "VariableInstruction" }),
+							}),
+							o({
+								type: "FoldedPlainInstruction",
+								operator: o({ type: "VariableInstruction" }),
+							}),
+						],
+					}),
+				],
+			}),
+		);
+	});
+});
