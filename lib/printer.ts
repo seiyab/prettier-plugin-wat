@@ -73,6 +73,110 @@ export const print: Printer<WatNode>["print"] = (
 			throw new Error("should not be reached if printComment is defined");
 		case "FoldedIfInstruction":
 			return printFoldedIfInstruction(node, path, print);
+		case "FoldedLoopInstruction": {
+			const parts: Doc[] = ["(loop"];
+			if (node.label) {
+				parts.push(" ", path.call(print, "label"));
+			}
+			const blocktype = path.call(print, "blocktype");
+			if (blocktype !== "") {
+				parts.push(" ", blocktype);
+			}
+			if (node.instructions.length > 0) {
+				parts.push(indent([line, join(line, path.map(print, "instructions"))]));
+			}
+			parts.push(softline, ")");
+			return group(parts);
+		}
+		case "FoldedBlockInstruction": {
+			const parts: Doc[] = ["(block"];
+			if (node.label) {
+				parts.push(" ", path.call(print, "label"));
+			}
+			const blocktype = path.call(print, "blocktype");
+			if (blocktype !== "") {
+				parts.push(" ", blocktype);
+			}
+			if (node.instructions.length > 0) {
+				parts.push(indent([line, join(line, path.map(print, "instructions"))]));
+			}
+			parts.push(softline, ")");
+			return group(parts);
+		}
+		case "IfInstruction": {
+			const parts: Doc[] = ["if"];
+			if (node.label) {
+				parts.push(" ", path.call(print, "label"));
+			}
+			const blocktype = path.call(print, "blocktype");
+			if (blocktype !== "") {
+				parts.push(" ", blocktype);
+			}
+
+			if (node.then.length > 0) {
+				parts.push(indent([hardline, join(hardline, path.map(print, "then"))]));
+			}
+
+			if (node.else.length > 0) {
+				parts.push(hardline, "else");
+				if (node.elseId) {
+					parts.push(" ", path.call(print, "elseId"));
+				}
+				parts.push(indent([hardline, join(hardline, path.map(print, "else"))]));
+			}
+			parts.push(hardline, "end");
+			if (node.endId) {
+				parts.push(" ", path.call(print, "endId"));
+			}
+			return group(parts);
+		}
+		case "BlockInstruction": {
+			const parts: Doc[] = ["block"];
+			if (node.label) {
+				parts.push(" ", path.call(print, "label"));
+			}
+			const blocktype = path.call(print, "blocktype");
+			if (blocktype !== "") {
+				parts.push(" ", blocktype);
+			}
+			if (node.instructions.length > 0) {
+				parts.push(
+					indent([hardline, join(hardline, path.map(print, "instructions"))]),
+				);
+			}
+			parts.push(hardline, "end");
+			if (node.endId) {
+				parts.push(" ", path.call(print, "endId"));
+			}
+			return group(parts);
+		}
+		case "LoopInstruction": {
+			const parts: Doc[] = ["loop"];
+			if (node.label) {
+				parts.push(" ", path.call(print, "label"));
+			}
+			const blocktype = path.call(print, "blocktype");
+			if (blocktype !== "") {
+				parts.push(" ", blocktype);
+			}
+			if (node.instructions.length > 0) {
+				parts.push(
+					indent([hardline, join(hardline, path.map(print, "instructions"))]),
+				);
+			}
+			parts.push(hardline, "end");
+			if (node.endId) {
+				parts.push(" ", path.call(print, "endId"));
+			}
+			return group(parts);
+		}
+		case "PlainControlInstruction": {
+			const parts: Doc[] = [node.op];
+			if (node.args.length > 0) {
+				parts.push(" ", join(" ", path.map(print, "args")));
+			}
+			return group(parts);
+		}
 		case "Import":
 			return group([
 				"(import ",
@@ -167,6 +271,25 @@ export const print: Printer<WatNode>["print"] = (
 		}
 		case "MemoryInstruction": {
 			return [node.op];
+		}
+		case "Local": {
+			const parts: Doc[] = ["(local"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			parts.push(" ", path.call(print, "v"));
+			parts.push(")");
+			return group(parts);
+		}
+		case "Global": {
+			const parts: Doc[] = ["(global"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			parts.push(" ", path.call(print, "globaltype"));
+			parts.push(" ", join(line, path.map(print, "expr")));
+			parts.push(")");
+			return group(parts);
 		}
 		default:
 			throw new Error(`Unknown node type: ${node.type}`);

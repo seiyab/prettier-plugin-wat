@@ -37,10 +37,9 @@ export type ModuleNodes =
 	| Program
 	| TypeUse
 	| Module
-	| Function
-	| Import
+	| ModuleField
+	| Local
 	| ImportDesc
-	| Memory
 	| OffsetAbbreviation
 	| DataSegment;
 export type ModuleElement = FunctionElement;
