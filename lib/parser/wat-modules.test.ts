@@ -56,8 +56,14 @@ describe("function", () => {
 				id: undefined,
 				typeuse: o({
 					params: [
-						o({ type: "Param", v: o({ type: "ValueType", value: "i32" }) }),
-						o({ type: "Param", v: o({ type: "ValueType", value: "f32" }) }),
+						o({
+							type: "Param",
+							valtype: [o({ type: "ValueType", value: "i32" })],
+						}),
+						o({
+							type: "Param",
+							valtype: [o({ type: "ValueType", value: "f32" })],
+						}),
 					],
 					results: [],
 				}),

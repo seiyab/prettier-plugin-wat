@@ -5,7 +5,7 @@ import { printFunction } from "./print-function";
 import { printFoldedIfInstruction } from "./print-folded-if-instruction";
 import { printTypeUse } from "./print-typeuse";
 
-const { group, indent, softline, hardline, join, line } = doc.builders;
+const { group, indent, softline, hardline, join, line, fill } = doc.builders;
 
 export const print: Printer<WatNode>["print"] = (
 	path,
@@ -40,10 +40,12 @@ export const print: Printer<WatNode>["print"] = (
 			return node.value;
 		case "Param":
 			return group([
-				"(param ",
-				path.call(print, "id"),
-				" ",
-				path.call(print, "v"),
+				indent([
+					"(param ",
+					path.call(print, "id"),
+					line,
+					fill(join(line, path.map(print, "valtype"))),
+				]),
 				")",
 			]);
 		case "Result":

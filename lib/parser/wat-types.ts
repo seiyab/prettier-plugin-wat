@@ -29,21 +29,33 @@ export const valtype: Parser<ValueType> = do_(($) => {
 
 type FunctionType = Param | Result; // TODO: functype
 
-export type Param = { type: "Param"; id?: AST<Identifier>; v: AST<ValueType> };
+export type Param = {
+	type: "Param";
+	id?: AST<Identifier>;
+	valtype: AST<ValueType>[];
+};
 export const param: Parser<Param> = do_(($) => {
 	void $(literal("("));
 	void $(literal("param"));
+	void $.exclusive();
+	const c = commentCollector();
 	const id = $(opt(identifier));
-	const v = $(valtype);
+	const v = c.drain($(many(valtype))).nodes;
 	void $(literal(")"));
-	return { type: "Param", id: id.type === "None" ? undefined : id, v };
+	return {
+		type: "Param",
+		id: id.type === "None" ? undefined : id,
+		valtype: v,
+		comments: c.comments(),
+	};
 });
 
 export type Result = { type: "Result"; valtype: AST<ValueType>[] };
 export const result: Parser<Result> = do_(($) => {
-	const c = commentCollector();
 	void $(literal("("));
 	void $(literal("result"));
+	void $.exclusive();
+	const c = commentCollector();
 	const v = c.drain($(many(valtype))).nodes;
 	if (v.length === 0) return Error("expected one or more valtypes");
 	void $(literal(")"));
