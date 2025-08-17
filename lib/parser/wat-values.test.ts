@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { identifier, uInteger } from "./wat-values";
+import { identifier, index, uInteger } from "./wat-values";
 import { check, input } from "./testing";
 
 describe("identifier", () => {
@@ -15,5 +15,11 @@ describe("uInteger", () => {
 		expect(out.node).toEqual(
 			expect.objectContaining({ type: "UInteger", text: "123" }),
 		);
+	});
+});
+
+describe("index", () => {
+	test("$breakcountloop", () => {
+		check(index.parse(input("$breakcountloop")));
 	});
 });

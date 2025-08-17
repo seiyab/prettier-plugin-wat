@@ -153,12 +153,12 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 				[
 					"unreachable",
 					"nop",
-					"br",
 					"br_if",
 					"br_table",
+					"br",
 					"return",
-					"call",
 					"call_indirect",
+					"call",
 				] as const
 			).map(literal),
 		),
