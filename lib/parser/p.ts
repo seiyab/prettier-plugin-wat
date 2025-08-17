@@ -22,16 +22,23 @@ export type Node = { type: string; comments?: (Comment & Located)[] };
 export type Unknown = { type: "Unknown"; value: string };
 export type None = { type: "None" };
 
+type ParseErrorOptions = Partial<{ exclusive: boolean }>;
 export class ParseError extends Error {
 	at: number;
+	exclusive: boolean;
 
-	constructor(error: Error | string, input: ParserInput) {
+	constructor(
+		error: Error | string,
+		input: ParserInput,
+		opts?: ParseErrorOptions,
+	) {
 		const { line, column } = ParseError.position(input);
 		const message = error instanceof Error ? error.message : error;
 
 		super(`at line ${line}, column ${column}: ${message}`);
 		this.name = "ParseError";
 		this.at = input.index;
+		this.exclusive = opts?.exclusive ?? false;
 
 		if (error instanceof Error) {
 			this.stack = error.stack;
@@ -83,6 +90,7 @@ function location(loc: { start: number; end: number }): Location {
 type Tools = {
 	<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
 	peek: (p: Parser<Node> | ParserFunc<Node>) => boolean;
+	exclusive: () => void;
 };
 
 type DoOptions = { separator: Parser<Node> | ParserFunc<Node> };
@@ -104,19 +112,10 @@ export function do_<T extends Node>(
 	return parser(p);
 	function p(input: ParserInput): ParserOutput<T> {
 		let currentInput = input;
+		let isExclusive = false;
 		const comments: AST<Comment>[] = [];
 
-		$.peek = (p: Parser<Node> | ParserFunc<Node>): boolean => {
-			let tempInput = currentInput;
-			if (separator != null && input.index !== currentInput.index) {
-				const g = separator.parse(tempInput);
-				if (!(g instanceof Error)) {
-					tempInput = g.nextInput;
-				}
-			}
-			const out = parser(p).parse(tempInput);
-			return !(out instanceof Error);
-		};
+		const $ = Object.assign($$, { peek, exclusive });
 
 		try {
 			const node = process($);
@@ -133,7 +132,7 @@ export function do_<T extends Node>(
 			throw e;
 		}
 
-		function $<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
+		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
 			let localInput = currentInput;
 			let localComments: AST<Comment>[] = [];
 			if (separator != null && input.index !== currentInput.index) {
@@ -146,10 +145,28 @@ export function do_<T extends Node>(
 			const out = parser(p).parse(localInput);
 			if (out instanceof ParseError) throw new Interrupt(out);
 			if (out instanceof Error)
-				throw new Interrupt(new ParseError(out, localInput));
+				throw new Interrupt(
+					new ParseError(out, localInput, { exclusive: isExclusive }),
+				);
 			currentInput = out.nextInput;
 			comments.push(...localComments);
 			return out.node;
+		}
+
+		function peek(p: Parser<Node> | ParserFunc<Node>): boolean {
+			let tempInput = currentInput;
+			if (separator != null && input.index !== currentInput.index) {
+				const g = separator.parse(tempInput);
+				if (!(g instanceof Error)) {
+					tempInput = g.nextInput;
+				}
+			}
+			const out = parser(p).parse(tempInput);
+			return !(out instanceof Error);
+		}
+
+		function exclusive(): void {
+			isExclusive = true;
 		}
 	}
 }
@@ -179,6 +196,7 @@ export function opt<T extends Node>(p: Parser<T> | ParserFunc<T>) {
 	function parse(input: ParserInput): ParserOutput<T | None> {
 		const out = parser(p).parse(input);
 		if (!(out instanceof Error)) return out;
+		if (out instanceof ParseError && out.exclusive) return out;
 		return { node: { type: "None" }, nextInput: input };
 	}
 }
@@ -192,6 +210,7 @@ export function oneOf<T extends Node>(
 		for (const p of parsers) {
 			const out = parser(p).parse(input);
 			if (out instanceof ParseError) {
+				if (out.exclusive) return out;
 				const cur = error instanceof ParseError ? error.at : -1;
 				if (cur < out.at) error = out;
 				continue;
@@ -213,8 +232,9 @@ export function many<T extends Node>(
 	return do_(($) => {
 		const nodes: AST<T>[] = [];
 		for (;;) {
-			if (!$.peek(elem)) break;
-			nodes.push($(elem));
+			const item = dropNone($(opt(elem)));
+			if (item == null) break;
+			nodes.push(item);
 		}
 		return { type: "Many", nodes };
 	});

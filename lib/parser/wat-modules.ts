@@ -324,6 +324,7 @@ export const function_: Parser<Function> = do_(($) => {
 	const c = commentCollector();
 	void $(literal("("));
 	void $(literal("func"));
+	void $.exclusive();
 	const id = $(opt(identifier));
 	const ex = $(opt(inlineExport));
 	const tu = $(typeuse);

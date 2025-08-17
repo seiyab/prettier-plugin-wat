@@ -24,26 +24,30 @@ import {
 import { Comment } from "./wat-lexical-format";
 import { typeuse, TypeUse } from "./wat-modules";
 
-export type InstructionNode =
-	| ControlInstruction
-	| PlainInstruction
-	| FoldedInstruction
-	| Memarg; // TODO: it's not a instruction
+export type InstructionNode = Instruction | Memarg;
 
-export const instruction: Parser<InstructionNode> = do_(($) =>
+type Instruction =
+	| BlockControlInstruction
+	| PlainInstruction
+	| FoldedInstruction;
+
+export const instruction: Parser<Instruction> = do_(($) =>
 	$(
-		oneOf<InstructionNode>([
-			controlInstruction,
+		oneOf<Instruction>([
+			blockControlInstruction,
 			plainInstruction,
 			foldedInstrucion,
 		]),
 	),
 );
 
-type ControlInstruction = IfInstruction | BlockInstruction | LoopInstruction;
-const controlInstruction: Parser<ControlInstruction> = do_(($) =>
+type BlockControlInstruction =
+	| IfInstruction
+	| BlockInstruction
+	| LoopInstruction;
+const blockControlInstruction: Parser<BlockControlInstruction> = do_(($) =>
 	$(
-		oneOf<ControlInstruction>([
+		oneOf<BlockControlInstruction>([
 			ifInstruction,
 			blockInstruction,
 			loopInstruction,
@@ -60,6 +64,7 @@ type BlockInstruction = {
 };
 const blockInstruction: Parser<BlockInstruction> = do_(($) => {
 	void $(literal("block"));
+	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
@@ -85,6 +90,7 @@ type LoopInstruction = {
 };
 const loopInstruction: Parser<LoopInstruction> = do_(($) => {
 	void $(literal("loop"));
+	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
@@ -112,6 +118,7 @@ type IfInstruction = {
 };
 const ifInstruction: Parser<IfInstruction> = do_(($) => {
 	void $(literal("if"));
+	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
@@ -133,6 +140,56 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 	};
 });
 
+type PlainControlInstruction = {
+	type: "PlainControlInstruction";
+	op: string;
+	args: AST<Index>[];
+};
+
+const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
+	const op = $(
+		oneOf(
+			(
+				[
+					"unreachable",
+					"nop",
+					"br",
+					"br_if",
+					"br_table",
+					"return",
+					"call",
+					"call_indirect",
+				] as const
+			).map(literal),
+		),
+	).value;
+	$.exclusive();
+	const args = ((/* iife */) => {
+		switch (op) {
+			case "unreachable":
+			case "nop":
+			case "return":
+				return [];
+			case "br":
+			case "br_if":
+				return [$(index)];
+			case "br_table":
+				// TODO
+				return [];
+			case "call":
+				// TODO
+				return [];
+			case "call_indirect":
+				// TODO
+				return [];
+			default:
+				op satisfies never;
+				return [];
+		}
+	})();
+	return { type: "PlainControlInstruction", op, args };
+});
+
 export type VariableInstruction = {
 	type: "VariableInstruction";
 	op: `${"local" | "global"}.${"get" | "set" | "tee"}`;
@@ -146,6 +203,7 @@ export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 			),
 		),
 	).value as VariableInstruction["op"];
+	void $.exclusive();
 	const idx = $<Index>(index);
 	return { type: "VariableInstruction", op, index: idx };
 });
@@ -156,6 +214,7 @@ export const memarg: Parser<Memarg> = do_(($) => {
 		opt(
 			do_(($) => {
 				void $(literal("offset="));
+				void $.exclusive();
 				return $(uInteger);
 			}),
 		),
@@ -164,6 +223,7 @@ export const memarg: Parser<Memarg> = do_(($) => {
 		opt(
 			do_(($) => {
 				void $(literal("align="));
+				void $.exclusive();
 				return $(uInteger);
 			}),
 		),
@@ -206,6 +266,9 @@ export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 					"rotl",
 					"rotr",
 
+					"eqz",
+					"eq",
+					"ne",
 					"lt_s",
 					"lt_u",
 					"gt_s",
@@ -333,12 +396,14 @@ export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
 });
 
 type PlainInstruction =
+	| PlainControlInstruction
 	| VariableInstruction
 	| NumericInstruction
 	| VectorInstruction
 	| MemoryInstruction;
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([
+		plainControlInstruction,
 		variableInstruction,
 		numericInstruction,
 		vectorInstruction,
@@ -362,6 +427,7 @@ export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
 
 	void $(literal("("));
 	void $(literal("if"));
+	void $.exclusive();
 
 	const result_ = $(opt(result));
 
@@ -405,10 +471,10 @@ export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) => {
 	if (!$.peek(literal("("))) return new Error("expected '('");
 	return $(
 		oneOf<FoldedInstruction>([
+			foldedIfInstruction,
 			foldedBlockInstruction,
 			foldedLoopInstruction,
 			foldedPlainInstruction,
-			foldedIfInstruction,
 		]),
 	);
 });
@@ -435,6 +501,7 @@ type FoldedBlockInstruction = {
 const foldedBlockInstruction: Parser<FoldedBlockInstruction> = do_(($) => {
 	void $(literal("("));
 	void $(literal("block"));
+	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
@@ -458,6 +525,7 @@ type FoldedLoopInstruction = {
 const foldedLoopInstruction: Parser<FoldedLoopInstruction> = do_(($) => {
 	void $(literal("("));
 	void $(literal("loop"));
+	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
