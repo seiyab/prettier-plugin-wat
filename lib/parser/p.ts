@@ -143,7 +143,10 @@ export function do_<T extends Node>(
 				}
 			}
 			const out = parser(p).parse(localInput);
-			if (out instanceof ParseError) throw new Interrupt(out);
+			if (out instanceof ParseError) {
+				if (isExclusive) out.exclusive = true;
+				throw new Interrupt(out);
+			}
 			if (out instanceof Error)
 				throw new Interrupt(
 					new ParseError(out, localInput, { exclusive: isExclusive }),
