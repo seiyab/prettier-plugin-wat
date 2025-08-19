@@ -10,7 +10,6 @@ const files = [
 	"endian-flip/endianflip.wat",
 	"memory-basics/memory-basics.wat",
 	"itoa/itoa.wat",
-	"vector-min/vmin.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");

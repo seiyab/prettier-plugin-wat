@@ -18,14 +18,20 @@ export type TypeNodes =
 	| Limits
 	| MemType;
 
-export type ValueType = {
-	type: "ValueType";
-	value: "i32" | "i64" | "f32" | "f64";
-};
-export const valtype: Parser<ValueType> = do_(($) => {
+type NumberType = { type: "NumberType"; value: "i32" | "i64" | "f32" | "f64" };
+export const numtype: Parser<NumberType> = do_(($) => {
 	const out = $(oneOf((["i32", "i64", "f32", "f64"] as const).map(literal)));
-	return { type: "ValueType", value: out.value };
+	return { type: "NumberType", value: out.value };
 });
+
+export type VectorType = { type: "VectorType"; value: "v128" };
+export const vectype: Parser<VectorType> = do_(($) => {
+	const out = $(literal("v128"));
+	return { type: "VectorType", value: out.value };
+});
+
+export type ValueType = NumberType | VectorType; // TODO: reference type
+export const valtype: Parser<ValueType> = oneOf<ValueType>([numtype, vectype]);
 
 type FunctionType = Param | Result; // TODO: functype
 
