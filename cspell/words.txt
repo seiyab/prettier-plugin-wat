@@ -17,3 +17,6 @@ softline
 spacechars
 typeuse
 valtype
+popcnt
+rotl
+rottr

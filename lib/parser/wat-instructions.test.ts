@@ -52,6 +52,14 @@ describe("folded plain instruction", () => {
 			}),
 		);
 	});
+
+	test("(local.set $result (i32x4.extract_lane 0 (local.get $v)))", () => {
+		check(
+			foldedInstrucion.parse(
+				input("(local.set $result (i32x4.extract_lane 0 (local.get $v)))"),
+			),
+		);
+	});
 });
 
 describe("folded block instruction", () => {

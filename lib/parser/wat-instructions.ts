@@ -178,7 +178,7 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 				return [];
 			case "call":
 				// TODO
-				return [];
+				return [$(index)];
 			case "call_indirect":
 				// TODO
 				return [];
@@ -190,7 +190,21 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 	return { type: "PlainControlInstruction", op, args };
 });
 
-export type VariableInstruction = {
+type ParametricInstruction = {
+	type: "ParametricInstruction";
+	op: "drop" | "select";
+	args?: AST<Result>[];
+};
+const parameticInstruction: Parser<ParametricInstruction> = do_(($) => {
+	const op = $(
+		oneOf([literal<"drop" | "select">("drop"), literal("select")]),
+	).value;
+	const c = commentCollector();
+	const args = op === "select" ? c.drain($(many(result))).nodes : undefined;
+	return { type: "ParametricInstruction", op, args, comments: c.comments() };
+});
+
+type VariableInstruction = {
 	type: "VariableInstruction";
 	op: `${"local" | "global"}.${"get" | "set" | "tee"}`;
 	index: AST<Index>;
@@ -313,29 +327,106 @@ export const numericInstruction: Parser<NumericInstruction> =
 
 export type VectorInstruction =
 	| VectorSimpleInstruction
+	| VectorLaneInstruction
 	| VectorMemoryInstruction
 	| VectorConstInstruction;
 
 type VectorSimpleInstruction = { type: "VectorSimpleInstruction"; op: string };
-const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = do_(
-	($) => {
-		const shape = $(oneOf(shapes.map(literal)));
-		void $(literal("."));
-		const op = $(
-			oneOf(
-				["swizzle", "splat", "eq", "ne", "lt_s", "lt_u", "gt_s", "gt_u"].map(
-					literal,
-				),
-			),
-		);
+const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = oneOf([
+	do_(
+		($) => {
+			const shape = $(oneOf(shapes.map(literal)));
+			void $(literal("."));
+			const op = $(
+				oneOf(
+					[
+						"swizzle",
+						"splat",
+						"eq",
+						"ne",
+						"lt_s",
+						"lt_u",
+						"gt_s",
+						"gt_u",
 
-		return {
-			type: "VectorSimpleInstruction",
-			op: `${shape.value}.${op.value}`,
-		};
-	},
-	{ separator: nop },
-);
+						"abs",
+						"neg",
+						"all_true",
+						"bitmask",
+						"narrow_i16x8_s",
+						"narrow_i16x8_u",
+						"shl",
+						"shr_s",
+						"shr_u",
+						"add",
+						"add_sat_s",
+						"add_sat_u",
+						"sub",
+						"sub_sat_s",
+						"sub_sat_u",
+						"min_s",
+						"min_u",
+						"max_s",
+						"max_u",
+						"avgr_u",
+						"popcnt",
+					].map(literal),
+				),
+			);
+			return {
+				type: "VectorSimpleInstruction",
+				op: `${shape.value}.${op.value}`,
+			};
+		},
+		{ separator: nop },
+	),
+	do_(
+		($) => {
+			void $(literal("v128"));
+			void $(literal("."));
+			const op = $(
+				oneOf(
+					["not", "and", "andnot", "or", "xor", "bitselect", "any_true"].map(
+						literal,
+					),
+				),
+			);
+			return { type: "VectorSimpleInstruction", op: `v128.${op.value}` };
+		},
+		{ separator: nop },
+	),
+]);
+
+type VectorLaneInstruction = {
+	type: "VectorLaneInstruction";
+	op: string;
+	laneidx: Index;
+};
+const vectorLaneInstruction: Parser<VectorLaneInstruction> = do_(($) => {
+	const op = $(
+		do_(
+			($) => {
+				const shape = $(oneOf(shapes.map(literal))).value;
+				void $(literal("."));
+				const o = $(
+					oneOf(
+						[
+							"extract_lane_s",
+							"extract_lane_u",
+							"replace_lane",
+							"extract_lane",
+						].map(literal),
+					),
+				).value;
+				return { type: "Temporal", value: `${shape}.${o}` };
+			},
+			{ separator: nop },
+		),
+	).value;
+	$.exclusive();
+	const laneidx = $(uInteger);
+	return { type: "VectorLaneInstruction", op, laneidx };
+});
 
 export type VectorMemoryInstruction = {
 	type: "VectorMemoryInstruction";
@@ -381,6 +472,7 @@ const vectorConstInstruction: Parser<VectorConstInstruction> = do_(($) => {
 
 export const vectorInstruction = oneOf<VectorInstruction>([
 	vectorSimpleInstruction,
+	vectorLaneInstruction,
 	vectorMemoryInstruction,
 	vectorConstInstruction,
 ]);
@@ -424,6 +516,7 @@ const memops = ["memory.grow", "memory.size", "memory.fill"]
 
 type PlainInstruction =
 	| PlainControlInstruction
+	| ParametricInstruction
 	| VariableInstruction
 	| NumericInstruction
 	| VectorInstruction
@@ -431,6 +524,7 @@ type PlainInstruction =
 export const plainInstruction: Parser<PlainInstruction> =
 	oneOf<PlainInstruction>([
 		plainControlInstruction,
+		parameticInstruction,
 		variableInstruction,
 		numericInstruction,
 		vectorInstruction,
