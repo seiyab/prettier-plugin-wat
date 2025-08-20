@@ -58,17 +58,17 @@ describe("function", () => {
 					params: [
 						o({
 							type: "Param",
-							valtype: [o({ type: "ValueType", value: "i32" })],
+							valtype: [o({ type: "NumberType", value: "i32" })],
 						}),
 						o({
 							type: "Param",
-							valtype: [o({ type: "ValueType", value: "f32" })],
+							valtype: [o({ type: "NumberType", value: "f32" })],
 						}),
 					],
 					results: [],
 				}),
 				locals: [
-					o({ type: "Local", v: o({ type: "ValueType", value: "f64" }) }),
+					o({ type: "Local", v: o({ type: "NumberType", value: "f64" }) }),
 				],
 				instructions: [
 					o({
