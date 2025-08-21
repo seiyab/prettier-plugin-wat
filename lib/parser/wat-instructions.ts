@@ -55,7 +55,7 @@ const blockControlInstruction: Parser<BlockControlInstruction> = do_(($) =>
 	),
 );
 
-type BlockInstruction = {
+export type BlockInstruction = {
 	type: "BlockInstruction";
 	label?: AST<Index>;
 	blocktype: AST<TypeUse>;
@@ -81,7 +81,7 @@ const blockInstruction: Parser<BlockInstruction> = do_(($) => {
 	};
 });
 
-type LoopInstruction = {
+export type LoopInstruction = {
 	type: "LoopInstruction";
 	label?: AST<Index>;
 	blocktype: AST<TypeUse>;
@@ -107,7 +107,7 @@ const loopInstruction: Parser<LoopInstruction> = do_(($) => {
 	};
 });
 
-type IfInstruction = {
+export type IfInstruction = {
 	type: "IfInstruction";
 	label?: AST<Index>;
 	blocktype: AST<TypeUse>;
@@ -613,7 +613,7 @@ const foldedPlainInstruction: Parser<FoldedPlainInstruction> = do_(($) => {
 	return { type: "FoldedPlainInstruction", operator, operands, comments };
 });
 
-type FoldedBlockInstruction = {
+export type FoldedBlockInstruction = {
 	type: "FoldedBlockInstruction";
 	label?: AST<Index>;
 	blocktype: AST<TypeUse>;
@@ -637,7 +637,7 @@ const foldedBlockInstruction: Parser<FoldedBlockInstruction> = do_(($) => {
 	};
 });
 
-type FoldedLoopInstruction = {
+export type FoldedLoopInstruction = {
 	type: "FoldedLoopInstruction";
 	label?: AST<Index>;
 	blocktype: AST<TypeUse>;

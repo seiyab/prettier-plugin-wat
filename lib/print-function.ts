@@ -1,5 +1,4 @@
 import { AstPath, doc, Doc } from "prettier";
-import {} from "prettier/doc";
 import { Function } from "./parser/wat-modules";
 import { Print } from "./types";
 import { WatNode } from "./parser/wat";

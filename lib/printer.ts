@@ -4,6 +4,11 @@ import { Print } from "./types";
 import { printFunction } from "./print-function";
 import { printFoldedIfInstruction } from "./print-folded-if-instruction";
 import { printTypeUse } from "./print-typeuse";
+import { printFoldedBlockInstruction } from "./print-folded-block-instruction";
+import { printFoldedLoopInstruction } from "./print-folded-loop-instruction";
+import { printBlockInstruction } from "./print-block-instruction";
+import { printLoopInstruction } from "./print-loop-instruction";
+import { printIfInstruction } from "./print-if-instruction";
 
 const { group, indent, softline, hardline, join, line, fill } = doc.builders;
 
@@ -81,103 +86,16 @@ export const print: Printer<WatNode>["print"] = (
 			throw new Error("should not be reached if printComment is defined");
 		case "FoldedIfInstruction":
 			return printFoldedIfInstruction(node, path, print);
-		case "FoldedLoopInstruction": {
-			const parts: Doc[] = ["(loop"];
-			if (node.label) {
-				parts.push(" ", path.call(print, "label"));
-			}
-			const blocktype = path.call(print, "blocktype");
-			if (blocktype !== "") {
-				parts.push(" ", blocktype);
-			}
-			if (node.instructions.length > 0) {
-				parts.push(indent([line, join(line, path.map(print, "instructions"))]));
-			}
-			parts.push(softline, ")");
-			return group(parts);
-		}
-		case "FoldedBlockInstruction": {
-			const parts: Doc[] = ["(block"];
-			if (node.label) {
-				parts.push(" ", path.call(print, "label"));
-			}
-			const blocktype = path.call(print, "blocktype");
-			if (blocktype !== "") {
-				parts.push(" ", blocktype);
-			}
-			if (node.instructions.length > 0) {
-				parts.push(indent([line, join(line, path.map(print, "instructions"))]));
-			}
-			parts.push(softline, ")");
-			return group(parts);
-		}
-		case "IfInstruction": {
-			const parts: Doc[] = ["if"];
-			if (node.label) {
-				parts.push(" ", path.call(print, "label"));
-			}
-			const blocktype = path.call(print, "blocktype");
-			if (blocktype !== "") {
-				parts.push(" ", blocktype);
-			}
-
-			if (node.then.length > 0) {
-				parts.push(indent([hardline, join(hardline, path.map(print, "then"))]));
-			}
-
-			if (node.else.length > 0) {
-				parts.push(hardline, "else");
-				if (node.elseId) {
-					parts.push(" ", path.call(print, "elseId"));
-				}
-				parts.push(indent([hardline, join(hardline, path.map(print, "else"))]));
-			}
-			parts.push(hardline, "end");
-			if (node.endId) {
-				parts.push(" ", path.call(print, "endId"));
-			}
-			return group(parts);
-		}
-		case "BlockInstruction": {
-			const parts: Doc[] = ["block"];
-			if (node.label) {
-				parts.push(" ", path.call(print, "label"));
-			}
-			const blocktype = path.call(print, "blocktype");
-			if (blocktype !== "") {
-				parts.push(" ", blocktype);
-			}
-			if (node.instructions.length > 0) {
-				parts.push(
-					indent([hardline, join(hardline, path.map(print, "instructions"))]),
-				);
-			}
-			parts.push(hardline, "end");
-			if (node.endId) {
-				parts.push(" ", path.call(print, "endId"));
-			}
-			return group(parts);
-		}
-		case "LoopInstruction": {
-			const parts: Doc[] = ["loop"];
-			if (node.label) {
-				parts.push(" ", path.call(print, "label"));
-			}
-			const blocktype = path.call(print, "blocktype");
-			if (blocktype !== "") {
-				parts.push(" ", blocktype);
-			}
-			if (node.instructions.length > 0) {
-				parts.push(
-					indent([hardline, join(hardline, path.map(print, "instructions"))]),
-				);
-			}
-			parts.push(hardline, "end");
-			if (node.endId) {
-				parts.push(" ", path.call(print, "endId"));
-			}
-			return group(parts);
-		}
+		case "FoldedLoopInstruction":
+			return printFoldedLoopInstruction(node, path, print);
+		case "FoldedBlockInstruction":
+			return printFoldedBlockInstruction(node, path, print);
+		case "IfInstruction":
+			return printIfInstruction(node, path, print);
+		case "BlockInstruction":
+			return printBlockInstruction(node, path, print);
+		case "LoopInstruction":
+			return printLoopInstruction(node, path, print);
 		case "PlainControlInstruction": {
 			const parts: Doc[] = [node.op];
 			if (node.args.length > 0) {
