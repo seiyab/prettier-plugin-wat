@@ -14,8 +14,9 @@
 		"build": "./scripts/build.mjs",
 		"prepublishOnly": "npm run build",
 		"test": "npm run build && vitest run",
-		"lint": "eslint .",
-		"check": "prettier -c . && tsc && eslint . && npm test",
+		"test:update-snapshots": "npm run build && vitest run --update",
+		"lint": "prettier -c . && tsc && eslint .",
+		"check": "npm run lint && npm test",
 		"format": "prettier -w ."
 	},
 	"devDependencies": {

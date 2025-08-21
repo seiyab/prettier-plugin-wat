@@ -49,8 +49,14 @@ export const print: Printer<WatNode>["print"] = (
 				")",
 			]);
 		case "Result":
-			return group(["(result ", join(line, path.map(print, "valtype")), ")"]);
-		case "ValueType":
+			return group([
+				"(result",
+				indent([line, join(line, path.map(print, "valtype"))]),
+				")",
+			]);
+		case "NumberType":
+			return node.value;
+		case "VectorType":
 			return node.value;
 		case "InlineExport":
 			return group(["(export ", path.call(print, "name"), ")"]);
@@ -179,6 +185,13 @@ export const print: Printer<WatNode>["print"] = (
 			}
 			return group(parts);
 		}
+		case "ParametricInstruction": {
+			const parts: Doc[] = [node.op];
+			if (node.args) {
+				parts.push(" ", join(" ", path.map(print, "args")));
+			}
+			return group(parts);
+		}
 		case "Import":
 			return group([
 				"(import ",
@@ -244,6 +257,10 @@ export const print: Printer<WatNode>["print"] = (
 		}
 		case "VectorSimpleInstruction":
 			return node.op;
+		case "VectorLaneInstruction": {
+			const parts: Doc[] = [node.op, " ", path.call(print, "laneidx")];
+			return group(parts);
+		}
 		case "Memory": {
 			const parts: Doc[] = ["(memory"];
 			if (node.id) {
@@ -289,7 +306,7 @@ export const print: Printer<WatNode>["print"] = (
 				parts.push(" ", path.call(print, "id"));
 			}
 			parts.push(" ", path.call(print, "globaltype"));
-			parts.push(" ", join(line, path.map(print, "expr")));
+			parts.push(indent([line, join(line, path.map(print, "expr"))]));
 			parts.push(")");
 			return group(parts);
 		}
