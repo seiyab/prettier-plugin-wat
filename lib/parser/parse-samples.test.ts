@@ -11,6 +11,7 @@ const files = [
 	"memory-basics/memory-basics.wat",
 	"itoa/itoa.wat",
 	"vector-min/vmin.wat",
+	"select/select.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
