@@ -14,6 +14,7 @@
     (select
       (i32.add (local.get $a) (local.get $b))
       (i32.sub (local.get $a) (local.get $b))
-      (i32.ge_s (local.get $control) (i32.const 0)))
+      (i32.ge_s (local.get $control) (i32.const 0))
+    )
   )
 )

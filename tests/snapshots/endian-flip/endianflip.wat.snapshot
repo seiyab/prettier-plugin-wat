@@ -15,6 +15,8 @@
       (local.get $offset)
       (i8x16.swizzle
         (v128.load  (local.get $offset))
-        (v128.const i8x16 3 2 1 0 7 6 5 4 11 10 9 8 15 14 13 12)))
+        (v128.const i8x16 3 2 1 0 7 6 5 4 11 10 9 8 15 14 13 12)
+      )
+    )
   )
 )

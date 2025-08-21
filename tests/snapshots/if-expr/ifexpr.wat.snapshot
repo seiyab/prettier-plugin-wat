@@ -18,6 +18,7 @@
         (i32.ge_s (local.get $control) (i32.const 0))
       (then (i32.const 1))
       (else (i32.const -1))
-      ))
+      )
+    )
   )
 )

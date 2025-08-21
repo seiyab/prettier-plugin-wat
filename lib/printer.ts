@@ -72,7 +72,10 @@ export const print: Printer<WatNode>["print"] = (
 		case "FoldedPlainInstruction": {
 			const body = [];
 			if (node.operands.length > 0) {
-				body.push(indent([line, join(line, path.map(print, "operands"))]));
+				body.push(
+					indent([line, join(line, path.map(print, "operands"))]),
+					softline,
+				);
 			}
 			return group(["(", path.call(print, "operator"), body, ")"]);
 		}
