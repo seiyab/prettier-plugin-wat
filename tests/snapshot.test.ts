@@ -12,6 +12,7 @@ const files = [
 	"itoa/itoa.wat",
 	"vector-min/vmin.wat",
 	"select/select.wat",
+	"recursion/recursion.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..");
