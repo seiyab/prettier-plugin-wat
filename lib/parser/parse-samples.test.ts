@@ -13,6 +13,7 @@ const files = [
 	"vector-min/vmin.wat",
 	"select/select.wat",
 	"recursion/recursion.wat",
+	"table-indirect-call/table.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
