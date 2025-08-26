@@ -231,7 +231,7 @@ export type Table = {
 	tabletype: AST<TableType>;
 };
 
-const table_: Parser<Table> = do_(($) => {
+const table: Parser<Table> = do_(($) => {
 	void $(literal("("));
 	void $(literal("table"));
 	const id = $(opt(identifier));
@@ -327,7 +327,7 @@ export const module_: Parser<Module> = do_(($) => {
 					function_,
 					import_,
 					memory_,
-					table_,
+					table,
 					data,
 					global_,
 				]),
