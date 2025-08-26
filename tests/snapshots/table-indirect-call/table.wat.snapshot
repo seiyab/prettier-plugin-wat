@@ -1,0 +1,6 @@
+;; Simple table for indirect function calls
+(module
+  (table $functions 3 funcref)
+  (table (export "shared-table") 10 20 funcref)
+  (table 5 externref)
+)

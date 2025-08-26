@@ -63,6 +63,8 @@ export const print: Printer<WatNode>["print"] = (
 			return node.value;
 		case "VectorType":
 			return node.value;
+		case "ReferenceType":
+			return node.value;
 		case "InlineExport":
 			return group(["(export ", path.call(print, "name"), ")"]);
 		case "StringLiteral":
@@ -141,6 +143,10 @@ export const print: Printer<WatNode>["print"] = (
 		}
 		case "MemType":
 			return path.call(print, "limits");
+		case "TableType": {
+			const parts: Doc[] = [path.call(print, "limits"), " ", path.call(print, "reftype")];
+			return group(parts);
+		}
 		case "Limits": {
 			const parts: Doc[] = [path.call(print, "min")];
 			if (node.max) {
@@ -191,6 +197,18 @@ export const print: Printer<WatNode>["print"] = (
 				parts.push(" ", path.call(print, "export"));
 			}
 			parts.push(" ", path.call(print, "memtype"));
+			parts.push(")");
+			return group(parts);
+		}
+		case "Table": {
+			const parts: Doc[] = ["(table"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			if (node.export) {
+				parts.push(" ", path.call(print, "export"));
+			}
+			parts.push(" ", path.call(print, "tabletype"));
 			parts.push(")");
 			return group(parts);
 		}
