@@ -7,8 +7,6 @@ import {
 	opt,
 	eof,
 	oneOf,
-	Many,
-	Node,
 	dropNone,
 	commentCollector,
 } from "./p";
@@ -31,8 +29,17 @@ import {
 	ValueType,
 	TableType,
 	tabletype,
+	FunctionType,
+	functype,
+	ReferenceType,
+	reftype,
 } from "./wat-types";
-import { InstructionNode, instruction } from "./wat-instructions";
+import {
+	Expression,
+	InstructionNode,
+	expr,
+	instruction,
+} from "./wat-instructions";
 import { Comment, gap } from "./wat-lexical-format";
 
 export type ModuleNodes =
@@ -43,6 +50,11 @@ export type ModuleNodes =
 	| Local
 	| ImportDesc
 	| OffsetAbbreviation
+	| ElementSegment
+	| ElementList
+	| ElementListAbbreviation
+	| ElementExpr
+	| TableUse
 	| DataSegment;
 export type ModuleElement = FunctionElement;
 
@@ -59,6 +71,16 @@ export const program: Parser<Program> = do_(($) => {
 	comments.push(...$(gap).comments);
 	void $(eof);
 	return { type: "Program", body, comments };
+});
+
+type Type = { type: "Type"; id?: AST<Identifier>; functype: AST<FunctionType> };
+const type: Parser<Type> = do_(($) => {
+	void $(literal("("));
+	void $(literal("type"));
+	const id = $(opt(identifier));
+	const functype_ = $(functype);
+	void $(literal(")"));
+	return { type: "Type", id: dropNone(id), functype: functype_ };
 });
 
 export type TypeUse = {
@@ -112,13 +134,13 @@ export type ExportDesc = {
 };
 const exportdesc = do_(($): ExportDesc => {
 	void $(literal("("));
-	const kind = $(oneOf((["func", "table", "memory", "global"] as const).map(literal))).value as ExportDesc["kind"];
+	const kind = $(
+		oneOf((["func", "table", "memory", "global"] as const).map(literal)),
+	).value;
 	const idx = $(index);
 	void $(literal(")"));
 	return { type: "ExportDesc", kind, index: idx };
 });
-
-type FuncSignature = { params: AST<Param>[]; results: AST<Result>[] };
 
 type ImportDesc = {
 	type: "ImportDesc";
@@ -126,35 +148,30 @@ type ImportDesc = {
 	id?: AST<Identifier>;
 	target: unknown;
 } & (
-	| { kind: "func"; target: FuncSignature }
+	| { kind: "func"; target: TypeUse }
 	| { kind: "memory"; target: AST<MemType> }
 	| { kind: "table"; target: AST<TableType> }
 );
 
 const funcimportdesc: Parser<ImportDesc> = do_(($) => {
-	const comments: AST<Comment>[] = [];
-	const m = <T extends Node>(mn: AST<Many<T>>): AST<Many<T>> => {
-		comments.push(...(mn.comments ?? []));
-		return mn;
-	};
 	void $(literal("("));
 	const kind = $(literal("func")).value;
+	$.exclusive();
 	const id = $(opt(identifier));
-	const params = m($(many(param))).nodes;
-	const results = m($(many(result))).nodes;
+	const typeuse_ = $(typeuse);
 	void $(literal(")"));
 	return {
 		type: "ImportDesc",
 		kind,
 		id: id.type === "None" ? undefined : id,
-		target: { params, results },
-		comments,
+		target: typeuse_,
 	};
 });
 
 const memimportdesc: Parser<ImportDesc> = do_(($) => {
 	void $(literal("("));
 	const kind = $(literal("memory")).value;
+	$.exclusive();
 	const id = $(opt(identifier));
 	const memtype_ = $(memtype);
 	void $(literal(")"));
@@ -169,6 +186,7 @@ const memimportdesc: Parser<ImportDesc> = do_(($) => {
 const tableimportdesc: Parser<ImportDesc> = do_(($) => {
 	void $(literal("("));
 	const kind = $(literal("table")).value;
+	$.exclusive();
 	const id = $(opt(identifier));
 	const tabletype_ = $(tabletype);
 	void $(literal(")"));
@@ -195,6 +213,7 @@ export type Import = {
 export const import_: Parser<Import> = do_(($) => {
 	void $(literal("("));
 	void $(literal("import"));
+	$.exclusive();
 	const mod = $(stringLiteral);
 	const name = $(stringLiteral);
 	const desc = $(importdesc);
@@ -244,6 +263,107 @@ const table: Parser<Table> = do_(($) => {
 		export: ex.type === "None" ? undefined : ex,
 		tabletype: tt,
 	};
+});
+
+export type ElementSegment = {
+	type: "ElementSegment";
+	id?: AST<Identifier>;
+	mode: "active" | "passive" | "declarative";
+	tableuse?: AST<TableUse>;
+	offset?: AST<Expression>;
+	elemlist: AST<ElementList | ElementListAbbreviation>;
+};
+const element: Parser<ElementSegment> = do_(($) => {
+	void $(literal("("));
+	void $(literal("elem"));
+	const id = $(opt(identifier));
+	const declare = $(opt(literal("declare")));
+	const tableuse_ =
+		declare.type === "None" ? dropNone($(opt(tableuse))) : undefined;
+	const mode =
+		declare.type !== "None" ? "declarative"
+		: tableuse_ != null ? "active"
+		: $.peek(literal("(")) ? "active"
+		: "passive";
+	const offset =
+		mode === "active" ?
+			$(
+				do_(($) => {
+					void $(literal("("));
+					void $(opt(literal("offset")));
+					const e = $(expr);
+					void $(literal(")"));
+					return e;
+				}),
+			)
+		:	undefined;
+	const elemlist_ = $(elemlist);
+	void $(literal(")"));
+	return {
+		type: "ElementSegment",
+		id: dropNone(id),
+		mode:
+			declare.type !== "None" ? "declarative"
+			: tableuse_ != null ? "active"
+			: "passive",
+		tableuse: tableuse_,
+		offset,
+		elemlist: elemlist_,
+	};
+});
+
+type ElementList = {
+	type: "ElementList";
+	reftype: AST<ReferenceType>;
+	elemexprs: AST<ElementExpr>[];
+};
+type ElementListAbbreviation = {
+	type: "ElementListAbbreviation";
+	funcidxs: AST<Index>[];
+};
+const elemlist: Parser<ElementList | ElementListAbbreviation> = oneOf<
+	ElementList | ElementListAbbreviation
+>([
+	do_(($) => {
+		const c = commentCollector();
+		const rt = $(reftype);
+		const exs = c.drain($(many(elemexpr))).nodes;
+		return {
+			type: "ElementList",
+			reftype: rt,
+			elemexprs: exs,
+			comments: c.comments(),
+		};
+	}),
+
+	do_(($) => {
+		const c = commentCollector();
+		void $(opt(literal("func")));
+		const funcidxs = c.drain($(many(index))).nodes;
+		return {
+			type: "ElementListAbbreviation",
+			funcidxs,
+			comments: c.comments(),
+		};
+	}),
+]);
+
+type ElementExpr = { type: "ElementExpr"; expr: AST<Expression> };
+const elemexpr: Parser<ElementExpr> = do_(($) => {
+	void $(literal("("));
+	void $(opt(literal("item")));
+	const ex = $(expr);
+	void $(literal(")"));
+	return { type: "ElementExpr", expr: ex };
+});
+
+type TableUse = { type: "TableUse"; index: AST<Index> };
+const tableuse: Parser<TableUse> = do_(($) => {
+	void $(literal("("));
+	void $(literal("table"));
+	const index_ = $(index);
+	void $(literal(")"));
+	return { type: "TableUse", index: index_ };
 });
 
 export type DataSegment = {
@@ -312,7 +432,16 @@ export type Module = {
 	modulefields: AST<ModuleField>[];
 };
 // TODO: other modulefields
-type ModuleField = Export | Function | Import | Memory | Table | DataSegment | Global;
+type ModuleField =
+	| Type
+	| Import
+	| Function
+	| Table
+	| Memory
+	| Global
+	| Export
+	| ElementSegment
+	| DataSegment;
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
@@ -323,13 +452,15 @@ export const module_: Parser<Module> = do_(($) => {
 		modulefields.push(
 			$(
 				oneOf<ModuleField>([
+					type,
 					export_,
 					function_,
 					import_,
 					memory_,
-					table,
-					data,
 					global_,
+					table,
+					element,
+					data,
 				]),
 			),
 		);

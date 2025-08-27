@@ -24,14 +24,14 @@ import {
 import { Comment } from "./wat-lexical-format";
 import { typeuse, TypeUse } from "./wat-modules";
 
-export type InstructionNode = Instruction | Memarg;
+export type InstructionNode = Instruction | Memarg | Expression;
 
 type Instruction =
 	| BlockControlInstruction
 	| PlainInstruction
 	| FoldedInstruction;
 
-export const instruction: Parser<Instruction> = do_(($) =>
+export const instr: Parser<Instruction> = do_(($) =>
 	$(
 		oneOf<Instruction>([
 			blockControlInstruction,
@@ -40,6 +40,8 @@ export const instruction: Parser<Instruction> = do_(($) =>
 		]),
 	),
 );
+/** @deprecated use `instr` instead */
+export const instruction = instr;
 
 type BlockControlInstruction =
 	| IfInstruction
@@ -143,7 +145,7 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 type PlainControlInstruction = {
 	type: "PlainControlInstruction";
 	op: string;
-	args: AST<Index>[];
+	args: AST<Index | TypeUse>[];
 };
 
 const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
@@ -179,9 +181,12 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 			case "call":
 				// TODO
 				return [$(index)];
-			case "call_indirect":
-				// TODO
-				return [];
+			case "call_indirect": {
+				const id = $(opt(index));
+				const typeuse_ = $(typeuse);
+				if (id.type !== "None") return [id, typeuse_];
+				return [typeuse_];
+			}
 			default:
 				op satisfies never;
 				return [];
@@ -659,4 +664,11 @@ const foldedLoopInstruction: Parser<FoldedLoopInstruction> = do_(($) => {
 		instructions,
 		comments: c.comments(),
 	};
+});
+
+export type Expression = { type: "Expression"; instrs: AST<InstructionNode>[] };
+export const expr: Parser<Expression> = do_(($) => {
+	const c = commentCollector();
+	const instrs = c.drain($(many(instr))).nodes;
+	return { type: "Expression", instrs, comments: c.comments() };
 });

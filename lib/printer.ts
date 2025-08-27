@@ -144,7 +144,11 @@ export const print: Printer<WatNode>["print"] = (
 		case "MemType":
 			return path.call(print, "limits");
 		case "TableType": {
-			const parts: Doc[] = [path.call(print, "limits"), " ", path.call(print, "reftype")];
+			const parts: Doc[] = [
+				path.call(print, "limits"),
+				" ",
+				path.call(print, "reftype"),
+			];
 			return group(parts);
 		}
 		case "Limits": {

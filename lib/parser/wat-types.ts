@@ -7,6 +7,7 @@ import {
 	Parser,
 	commentCollector,
 	many,
+	dropNone,
 } from "./p";
 import { identifier, Identifier, uInteger, UInteger } from "./wat-values";
 
@@ -32,16 +33,36 @@ export const vectype: Parser<VectorType> = do_(($) => {
 	return { type: "VectorType", value: out.value };
 });
 
-export type ReferenceType = { type: "ReferenceType"; value: "funcref" | "externref" };
+export type ReferenceType = {
+	type: "ReferenceType";
+	value: "funcref" | "externref";
+};
 export const reftype: Parser<ReferenceType> = do_(($) => {
 	const out = $(oneOf((["funcref", "externref"] as const).map(literal)));
 	return { type: "ReferenceType", value: out.value };
 });
 
 export type ValueType = NumberType | VectorType | ReferenceType;
-export const valtype: Parser<ValueType> = oneOf<ValueType>([numtype, vectype, reftype]);
+export const valtype: Parser<ValueType> = oneOf<ValueType>([
+	numtype,
+	vectype,
+	reftype,
+]);
 
-type FunctionType = Param | Result; // TODO: functype
+export type FunctionType = {
+	type: "FunctionType";
+	params: AST<Param>[];
+	results: AST<Result>[];
+};
+export const functype: Parser<FunctionType> = do_(($) => {
+	const c = commentCollector();
+	void $(literal("("));
+	void $(literal("func"));
+	const params = c.drain($(many(param))).nodes;
+	const results = c.drain($(many(result))).nodes;
+	void $(literal(")"));
+	return { type: "FunctionType", params, results, comments: c.comments() };
+});
 
 export type Param = {
 	type: "Param";
@@ -84,7 +105,7 @@ export type Limits = {
 const limits: Parser<Limits> = do_(($) => {
 	const min = $(uInteger);
 	const max = $(opt(uInteger));
-	return { type: "Limits", min, max: max.type === "None" ? undefined : max };
+	return { type: "Limits", min, max: dropNone(max) };
 });
 
 export type MemType = { type: "MemType"; limits: AST<Limits> };
@@ -93,10 +114,10 @@ export const memtype: Parser<MemType> = do_(($) => {
 	return { type: "MemType", limits: limits_ };
 });
 
-export type TableType = { 
-	type: "TableType"; 
-	limits: AST<Limits>; 
-	reftype: AST<ReferenceType> 
+export type TableType = {
+	type: "TableType";
+	limits: AST<Limits>;
+	reftype: AST<ReferenceType>;
 };
 export const tabletype: Parser<TableType> = do_(($) => {
 	const limits_ = $(limits);
