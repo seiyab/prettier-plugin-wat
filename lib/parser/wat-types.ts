@@ -12,11 +12,13 @@ import { identifier, Identifier, uInteger, UInteger } from "./wat-values";
 
 export type TypeNodes =
 	| ValueType
+	| ReferenceType
 	| FunctionType
 	| Param
 	| Result
 	| Limits
-	| MemType;
+	| MemType
+	| TableType;
 
 type NumberType = { type: "NumberType"; value: "i32" | "i64" | "f32" | "f64" };
 export const numtype: Parser<NumberType> = do_(($) => {
@@ -30,8 +32,14 @@ export const vectype: Parser<VectorType> = do_(($) => {
 	return { type: "VectorType", value: out.value };
 });
 
-export type ValueType = NumberType | VectorType; // TODO: reference type
-export const valtype: Parser<ValueType> = oneOf<ValueType>([numtype, vectype]);
+export type ReferenceType = { type: "ReferenceType"; value: "funcref" | "externref" };
+export const reftype: Parser<ReferenceType> = do_(($) => {
+	const out = $(oneOf((["funcref", "externref"] as const).map(literal)));
+	return { type: "ReferenceType", value: out.value };
+});
+
+export type ValueType = NumberType | VectorType | ReferenceType;
+export const valtype: Parser<ValueType> = oneOf<ValueType>([numtype, vectype, reftype]);
 
 type FunctionType = Param | Result; // TODO: functype
 
@@ -83,4 +91,15 @@ export type MemType = { type: "MemType"; limits: AST<Limits> };
 export const memtype: Parser<MemType> = do_(($) => {
 	const limits_ = $(limits);
 	return { type: "MemType", limits: limits_ };
+});
+
+export type TableType = { 
+	type: "TableType"; 
+	limits: AST<Limits>; 
+	reftype: AST<ReferenceType> 
+};
+export const tabletype: Parser<TableType> = do_(($) => {
+	const limits_ = $(limits);
+	const reftype_ = $(reftype);
+	return { type: "TableType", limits: limits_, reftype: reftype_ };
 });

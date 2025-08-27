@@ -29,6 +29,8 @@ import {
 	Result,
 	valtype,
 	ValueType,
+	TableType,
+	tabletype,
 } from "./wat-types";
 import { InstructionNode, instruction } from "./wat-instructions";
 import { Comment, gap } from "./wat-lexical-format";
@@ -110,7 +112,7 @@ export type ExportDesc = {
 };
 const exportdesc = do_(($): ExportDesc => {
 	void $(literal("("));
-	const kind = $(literal("func")).value as ExportDesc["kind"];
+	const kind = $(oneOf((["func", "table", "memory", "global"] as const).map(literal))).value as ExportDesc["kind"];
 	const idx = $(index);
 	void $(literal(")"));
 	return { type: "ExportDesc", kind, index: idx };
@@ -126,6 +128,7 @@ type ImportDesc = {
 } & (
 	| { kind: "func"; target: FuncSignature }
 	| { kind: "memory"; target: AST<MemType> }
+	| { kind: "table"; target: AST<TableType> }
 );
 
 const funcimportdesc: Parser<ImportDesc> = do_(($) => {
@@ -163,9 +166,24 @@ const memimportdesc: Parser<ImportDesc> = do_(($) => {
 	};
 });
 
+const tableimportdesc: Parser<ImportDesc> = do_(($) => {
+	void $(literal("("));
+	const kind = $(literal("table")).value;
+	const id = $(opt(identifier));
+	const tabletype_ = $(tabletype);
+	void $(literal(")"));
+	return {
+		type: "ImportDesc",
+		kind,
+		id: id.type === "None" ? undefined : id,
+		target: tabletype_,
+	};
+});
+
 const importdesc: Parser<ImportDesc> = oneOf<ImportDesc>([
 	funcimportdesc,
 	memimportdesc,
+	tableimportdesc,
 ]);
 
 export type Import = {
@@ -203,6 +221,28 @@ const memory_: Parser<Memory> = do_(($) => {
 		id: id.type === "None" ? undefined : id,
 		export: ex.type === "None" ? undefined : ex,
 		memtype: mt,
+	};
+});
+
+export type Table = {
+	type: "Table";
+	id?: AST<Identifier>;
+	export?: AST<InlineExport>;
+	tabletype: AST<TableType>;
+};
+
+const table: Parser<Table> = do_(($) => {
+	void $(literal("("));
+	void $(literal("table"));
+	const id = $(opt(identifier));
+	const ex = $(opt(inlineExport));
+	const tt = $(tabletype);
+	void $(literal(")"));
+	return {
+		type: "Table",
+		id: id.type === "None" ? undefined : id,
+		export: ex.type === "None" ? undefined : ex,
+		tabletype: tt,
 	};
 });
 
@@ -272,7 +312,7 @@ export type Module = {
 	modulefields: AST<ModuleField>[];
 };
 // TODO: other modulefields
-type ModuleField = Export | Function | Import | Memory | DataSegment | Global;
+type ModuleField = Export | Function | Import | Memory | Table | DataSegment | Global;
 export const module_: Parser<Module> = do_(($) => {
 	void $(literal("("));
 	void $(literal("module"));
@@ -287,6 +327,7 @@ export const module_: Parser<Module> = do_(($) => {
 					function_,
 					import_,
 					memory_,
+					table,
 					data,
 					global_,
 				]),
