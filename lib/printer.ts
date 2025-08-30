@@ -38,6 +38,28 @@ export const print: Printer<WatNode>["print"] = (
 		case "Function": {
 			return printFunction(node, path, print);
 		}
+		case "Type": {
+			const parts: Doc[] = ["(type"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			if (node.functype) {
+				parts.push(indent([line, path.call(print, "functype")]));
+			}
+			parts.push(")");
+			return group(parts);
+		}
+		case "FunctionType": {
+			const parts: Doc[] = ["(func"];
+			if (node.params && node.params.length > 0) {
+				parts.push(indent([line, join(line, path.map(print, "params"))]));
+			}
+			if (node.results && node.results.length > 0) {
+				parts.push(indent([line, join(line, path.map(print, "results"))]));
+			}
+			parts.push(")");
+			return group(parts);
+		}
 		case "TypeUse": {
 			return printTypeUse(node, path, print);
 		}
@@ -62,6 +84,8 @@ export const print: Printer<WatNode>["print"] = (
 		case "NumberType":
 			return node.value;
 		case "VectorType":
+			return node.value;
+		case "ReferenceType":
 			return node.value;
 		case "InlineExport":
 			return group(["(export ", path.call(print, "name"), ")"]);
@@ -130,7 +154,7 @@ export const print: Printer<WatNode>["print"] = (
 			}
 			switch (node.kind) {
 				case "func":
-					// TODO: print typeuse
+					parts.push(" ", path.call(print, "target"));
 					break;
 				case "memory":
 					parts.push(" ", path.call(print, "target"));
@@ -141,6 +165,14 @@ export const print: Printer<WatNode>["print"] = (
 		}
 		case "MemType":
 			return path.call(print, "limits");
+		case "TableType": {
+			const parts: Doc[] = [
+				path.call(print, "limits"),
+				" ",
+				path.call(print, "reftype"),
+			];
+			return group(parts);
+		}
 		case "Limits": {
 			const parts: Doc[] = [path.call(print, "min")];
 			if (node.max) {
@@ -194,6 +226,18 @@ export const print: Printer<WatNode>["print"] = (
 			parts.push(")");
 			return group(parts);
 		}
+		case "Table": {
+			const parts: Doc[] = ["(table"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			if (node.export) {
+				parts.push(" ", path.call(print, "export"));
+			}
+			parts.push(" ", path.call(print, "tabletype"));
+			parts.push(")");
+			return group(parts);
+		}
 		case "DataSegment": {
 			const parts: Doc[] = ["(data"];
 			if (node.memuse) {
@@ -230,6 +274,41 @@ export const print: Printer<WatNode>["print"] = (
 			parts.push(indent([line, join(line, path.map(print, "expr"))]));
 			parts.push(")");
 			return group(parts);
+		}
+		case "ElementSegment": {
+			const parts: Doc[] = ["(elem"];
+			if (node.id) {
+				parts.push(" ", path.call(print, "id"));
+			}
+			if (node.mode === "declarative") {
+				parts.push(" declare");
+			}
+			if (node.tableuse) {
+				parts.push(" ", path.call(print, "tableuse"));
+			}
+			if (node.offset) {
+				parts.push(" (offset ", path.call(print, "offset"), ")");
+			}
+			parts.push(indent([line, path.call(print, "elemlist")]));
+			parts.push(")");
+			return group(parts);
+		}
+		case "ElementList": {
+			const parts: Doc[] = [path.call(print, "reftype")];
+			parts.push(indent([line, join(line, path.map(print, "elemexprs"))]));
+			return group(parts);
+		}
+		case "ElementListAbbreviation": {
+			return join(line, path.map(print, "funcidxs"));
+		}
+		case "ElementExpr": {
+			return group(["(item ", path.call(print, "expr"), ")"]);
+		}
+		case "TableUse": {
+			return group(["(table ", path.call(print, "index"), ")"]);
+		}
+		case "Expression": {
+			return join(line, path.map(print, "instrs"));
 		}
 		default:
 			throw new Error(`Unknown node type: ${node.type}`);

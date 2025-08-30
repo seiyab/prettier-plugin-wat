@@ -5,7 +5,7 @@
 (module
   ;; Logging function imported from the environment; will print a single
   ;; i32.
-  (import "env" "log" (func $log))
+  (import "env" "log" (func $log (param  i32)))
   ;; Declare linear memory and export it to host. The offset returned by
   ;; $itoa is relative to this memory.
   (memory (export "memory") 1)

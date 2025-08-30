@@ -8,8 +8,8 @@
 (module
   ;; Memory buffer with data imported from the host.
   (import "env" "buffer" (memory 80))
-  (import "env" "log_i32" (func $log_i32))
-  (import "env" "log_4xi32" (func $log_4xi32))
+  (import "env" "log_i32" (func $log_i32 (param  i32)))
+  (import "env" "log_4xi32" (func $log_4xi32 (param  i32 i32 i32 i32)))
   ;; vmin returns the minimal value in a memory array of i32 values.
   ;; start is the offset in memory where this array starts.
   ;; count is the number of i32 values - each value is 4 bytes. If count=0,

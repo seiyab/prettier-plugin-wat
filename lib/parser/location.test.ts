@@ -79,6 +79,26 @@ describe("local.get", () => {
 			              "type": "Identifier",
 			            },
 			            "raw": "(func $log (param i32))",
+			            "target": {
+			              "comments": [],
+			              "params": [
+			                {
+			                  "comments": [],
+			                  "raw": "(param i32)",
+			                  "type": "Param",
+			                  "valtype": [
+			                    {
+			                      "comments": [],
+			                      "raw": "i32",
+			                      "type": "NumberType",
+			                    },
+			                  ],
+			                },
+			              ],
+			              "raw": "(param i32)",
+			              "results": [],
+			              "type": "TypeUse",
+			            },
 			            "type": "ImportDesc",
 			          },
 			          "module": {
