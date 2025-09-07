@@ -605,7 +605,7 @@ export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) => {
 	);
 });
 
-type FoldedPlainInstruction = {
+export type FoldedPlainInstruction = {
 	type: "FoldedPlainInstruction";
 	operator: AST<PlainInstruction>;
 	operands: AST<FoldedInstruction>[];

@@ -73,7 +73,11 @@ export const program: Parser<Program> = do_(($) => {
 	return { type: "Program", body, comments };
 });
 
-type Type = { type: "Type"; id?: AST<Identifier>; functype: AST<FunctionType> };
+export type Type = {
+	type: "Type";
+	id?: AST<Identifier>;
+	functype: AST<FunctionType>;
+};
 const type: Parser<Type> = do_(($) => {
 	void $(literal("("));
 	void $(literal("type"));
@@ -142,7 +146,7 @@ const exportdesc = do_(($): ExportDesc => {
 	return { type: "ExportDesc", kind, index: idx };
 });
 
-type ImportDesc = {
+export type ImportDesc = {
 	type: "ImportDesc";
 	kind: string;
 	id?: AST<Identifier>;
@@ -473,7 +477,7 @@ export const module_: Parser<Module> = do_(($) => {
 	};
 });
 
-type Local = { type: "Local"; id?: AST<Identifier>; v: AST<ValueType> };
+export type Local = { type: "Local"; id?: AST<Identifier>; v: AST<ValueType> };
 const local: Parser<Local> = do_(($) => {
 	void $(literal("("));
 	void $(literal("local"));
