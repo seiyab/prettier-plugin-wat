@@ -1,6 +1,5 @@
 import { Doc, doc, Printer } from "prettier";
 import { WatNode } from "./parser/wat";
-import { Print } from "./types";
 import { printFunction } from "./print-function";
 import { printFoldedIfInstruction } from "./print-folded-if-instruction";
 import { printTypeUse } from "./print-typeuse";
@@ -9,12 +8,28 @@ import { printFoldedLoopInstruction } from "./print-folded-loop-instruction";
 import { printBlockInstruction } from "./print-block-instruction";
 import { printLoopInstruction } from "./print-loop-instruction";
 import { printIfInstruction } from "./print-if-instruction";
+import { printModule } from "./print-module";
+import { printFunctionType } from "./print-function-type";
+import { printParam } from "./print-param";
+import { printFoldedPlainInstruction } from "./print-folded-plain-instruction";
+import { printImport } from "./print-import";
+import { printImportDesc } from "./print-import-desc";
+import { printMemarg } from "./print-memarg";
+import { printVectorConstInstruction } from "./print-vector-const-instruction";
+import { printMemory } from "./print-memory";
+import { printTable } from "./print-table";
+import { printDataSegment } from "./print-data-segment";
+import { printLocal } from "./print-local";
+import { printGlobal } from "./print-global";
+import { printElementSegment } from "./print-element-segment";
+import { Print } from "./types";
+import { printType } from "./print-type";
 
-const { group, indent, softline, hardline, join, line, fill } = doc.builders;
+const { group, indent, hardline, join, line } = doc.builders;
 
 export const print: Printer<WatNode>["print"] = (
 	path,
-	_options,
+	options,
 	print: Print,
 ) => {
 	const node = path.node;
@@ -22,59 +37,20 @@ export const print: Printer<WatNode>["print"] = (
 	switch (node.type) {
 		case "Program":
 			return [join(hardline, path.map(print, "body")), hardline];
-		case "Module": {
-			const parts: Doc[] = ["(module"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			if (node.modulefields && node.modulefields.length > 0) {
-				parts.push(
-					indent([hardline, join(hardline, path.map(print, "modulefields"))]),
-				);
-			}
-			parts.push(softline, ")");
-			return group(parts);
-		}
-		case "Function": {
+		case "Module":
+			return printModule(node, path, print);
+		case "Function":
 			return printFunction(node, path, print);
-		}
-		case "Type": {
-			const parts: Doc[] = ["(type"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			if (node.functype) {
-				parts.push(indent([line, path.call(print, "functype")]));
-			}
-			parts.push(")");
-			return group(parts);
-		}
-		case "FunctionType": {
-			const parts: Doc[] = ["(func"];
-			if (node.params && node.params.length > 0) {
-				parts.push(indent([line, join(line, path.map(print, "params"))]));
-			}
-			if (node.results && node.results.length > 0) {
-				parts.push(indent([line, join(line, path.map(print, "results"))]));
-			}
-			parts.push(")");
-			return group(parts);
-		}
-		case "TypeUse": {
+		case "FunctionType":
+			return printFunctionType(node, path, print);
+		case "Type":
+			return printType(node, path, print);
+		case "TypeUse":
 			return printTypeUse(node, path, print);
-		}
 		case "Identifier":
 			return node.value;
 		case "Param":
-			return group([
-				indent([
-					"(param ",
-					path.call(print, "id"),
-					line,
-					fill(join(line, path.map(print, "valtype"))),
-				]),
-				")",
-			]);
+			return printParam(node, path, print);
 		case "Result":
 			return group([
 				"(result",
@@ -93,16 +69,8 @@ export const print: Printer<WatNode>["print"] = (
 			return `"${node.value}"`;
 		case "Integer":
 			return node.text;
-		case "FoldedPlainInstruction": {
-			const body = [];
-			if (node.operands.length > 0) {
-				body.push(
-					indent([line, join(line, path.map(print, "operands"))]),
-					softline,
-				);
-			}
-			return group(["(", path.call(print, "operator"), body, ")"]);
-		}
+		case "FoldedPlainInstruction":
+			return printFoldedPlainInstruction(node, path, print);
 		case "VariableInstruction":
 			return [node.op, " ", path.call(print, "index")];
 		case "NumericSimpleInstruction":
@@ -138,31 +106,9 @@ export const print: Printer<WatNode>["print"] = (
 			return group(parts);
 		}
 		case "Import":
-			return group([
-				"(import ",
-				path.call(print, "module"),
-				" ",
-				path.call(print, "name"),
-				" ",
-				path.call(print, "desc"),
-				")",
-			]);
-		case "ImportDesc": {
-			const parts: Doc[] = ["(", node.kind];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			switch (node.kind) {
-				case "func":
-					parts.push(" ", path.call(print, "target"));
-					break;
-				case "memory":
-					parts.push(" ", path.call(print, "target"));
-					break;
-			}
-			parts.push(")");
-			return group(parts);
-		}
+			return printImport(node, path, print);
+		case "ImportDesc":
+			return printImportDesc(node, path, print);
 		case "MemType":
 			return path.call(print, "limits");
 		case "TableType": {
@@ -189,110 +135,34 @@ export const print: Printer<WatNode>["print"] = (
 			}
 			return group(parts);
 		}
-		case "Memarg": {
-			const parts: Doc[] = [];
-			if (node.offset) {
-				parts.push(["offset=", path.call(print, "offset")]);
-			}
-			if (node.align) {
-				parts.push(" ", ["align=", path.call(print, "align")]);
-			}
-			return group(parts);
-		}
-		case "VectorConstInstruction": {
-			const parts: Doc[] = [
-				node.op,
-				" ",
-				node.shape,
-				indent([line, join(line, path.map(print, "vals"))]),
-			];
-			return group(parts);
-		}
+		case "Memarg":
+			return printMemarg(node, path, print);
+		case "VectorConstInstruction":
+			return printVectorConstInstruction(node, path, print);
 		case "VectorSimpleInstruction":
 			return node.op;
 		case "VectorLaneInstruction": {
 			const parts: Doc[] = [node.op, " ", path.call(print, "laneidx")];
 			return group(parts);
 		}
-		case "Memory": {
-			const parts: Doc[] = ["(memory"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			if (node.export) {
-				parts.push(" ", path.call(print, "export"));
-			}
-			parts.push(" ", path.call(print, "memtype"));
-			parts.push(")");
-			return group(parts);
-		}
-		case "Table": {
-			const parts: Doc[] = ["(table"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			if (node.export) {
-				parts.push(" ", path.call(print, "export"));
-			}
-			parts.push(" ", path.call(print, "tabletype"));
-			parts.push(")");
-			return group(parts);
-		}
-		case "DataSegment": {
-			const parts: Doc[] = ["(data"];
-			if (node.memuse) {
-				parts.push(" ", path.call(print, "memuse"));
-			}
-			parts.push(" ", path.call(print, "offset"));
-			if (node.inits.length > 0) {
-				parts.push(indent([line, join(line, path.map(print, "inits"))]));
-			}
-			parts.push(")");
-			return group(parts);
-		}
+		case "Memory":
+			return printMemory(node, path, print);
+		case "Table":
+			return printTable(node, path, print);
+		case "DataSegment":
+			return printDataSegment(node, path, print);
 		case "OffsetAbbreviation": {
 			return group(["(", path.call(print, "instr"), ")"]);
 		}
 		case "MemoryInstruction": {
 			return [node.op];
 		}
-		case "Local": {
-			const parts: Doc[] = ["(local"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			parts.push(" ", path.call(print, "v"));
-			parts.push(")");
-			return group(parts);
-		}
-		case "Global": {
-			const parts: Doc[] = ["(global"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			parts.push(" ", path.call(print, "globaltype"));
-			parts.push(indent([line, join(line, path.map(print, "expr"))]));
-			parts.push(")");
-			return group(parts);
-		}
-		case "ElementSegment": {
-			const parts: Doc[] = ["(elem"];
-			if (node.id) {
-				parts.push(" ", path.call(print, "id"));
-			}
-			if (node.mode === "declarative") {
-				parts.push(" declare");
-			}
-			if (node.tableuse) {
-				parts.push(" ", path.call(print, "tableuse"));
-			}
-			if (node.offset) {
-				parts.push(" (offset ", path.call(print, "offset"), ")");
-			}
-			parts.push(indent([line, path.call(print, "elemlist")]));
-			parts.push(")");
-			return group(parts);
-		}
+		case "Local":
+			return printLocal(node, path, print);
+		case "Global":
+			return printGlobal(node, path, print);
+		case "ElementSegment":
+			return printElementSegment(node, path, print);
 		case "ElementList": {
 			const parts: Doc[] = [path.call(print, "reftype")];
 			parts.push(indent([line, join(line, path.map(print, "elemexprs"))]));
