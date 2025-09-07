@@ -1,12 +1,12 @@
 [submodule "references/prettier"]
 	path = references/prettier
-	url = git@github.com:prettier/prettier.git
+	url = https://github.com/prettier/prettier.git
 [submodule "references/prettier-plugin-svelte"]
 	path = references/prettier-plugin-svelte
-	url = git@github.com:sveltejs/prettier-plugin-svelte.git
+	url = https://github.com/sveltejs/prettier-plugin-svelte.git
 [submodule "references/prettier-plugin-sort-members"]
 	path = references/prettier-plugin-sort-members
 	url = git@github.com:seiyab/prettier-plugin-sort-members.git
 [submodule "references/wasm-wat-samples"]
 	path = references/wasm-wat-samples
-	url = git@github.com:eliben/wasm-wat-samples.git
+	url = https://github.com/eliben/wasm-wat-samples.git
