@@ -38,7 +38,7 @@ export const print: Printer<WatNode>["print"] = (
 		case "Program":
 			return [join(hardline, path.map(print, "body")), hardline];
 		case "Module":
-			return printModule(node, path, print);
+			return printModule(node, path, print, options);
 		case "Function":
 			return printFunction(node, path, print);
 		case "FunctionType":

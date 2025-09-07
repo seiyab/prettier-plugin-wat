@@ -19,6 +19,7 @@
     )
     )
   )
+
   ;; is_odd(n) returns 1 if n is odd, 0 otherwise.
   (func $is_even (export "is_even") (param $n i32) (result i32)
     (if (result i32)
@@ -27,6 +28,7 @@
     (else (call $is_odd (i32.sub (local.get $n) (i32.const 1))))
     )
   )
+
   ;; is_even(n) returns 1 if n is even, 0 otherwise.
   (func $is_odd (export "is_odd") (param $n i32) (result i32)
     (if (result i32)

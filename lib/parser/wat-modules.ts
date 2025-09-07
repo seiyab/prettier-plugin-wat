@@ -447,14 +447,13 @@ type ModuleField =
 	| ElementSegment
 	| DataSegment;
 export const module_: Parser<Module> = do_(($) => {
+	const c = commentCollector();
 	void $(literal("("));
 	void $(literal("module"));
 	const id = $(opt(identifier));
-	const modulefields: AST<ModuleField>[] = [];
-	for (;;) {
-		if (!$.peek(literal("("))) break;
-		modulefields.push(
-			$(
+	const modulefields = c.drain(
+		$(
+			many(
 				oneOf<ModuleField>([
 					type,
 					export_,
@@ -467,13 +466,14 @@ export const module_: Parser<Module> = do_(($) => {
 					data,
 				]),
 			),
-		);
-	}
+		),
+	).nodes;
 	void $(literal(")"));
 	return {
 		type: "Module",
 		id: id.type !== "None" ? id : undefined,
 		modulefields,
+		comments: c.comments(),
 	};
 });
 
