@@ -14,6 +14,8 @@ const files = [
 	"select/select.wat",
 	"recursion/recursion.wat",
 	"table-indirect-call/table.wat",
+	"import-between-modules/mod1.wat",
+	"import-between-modules/mod2.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
