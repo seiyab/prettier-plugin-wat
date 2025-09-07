@@ -60,6 +60,18 @@ describe("folded plain instruction", () => {
 			),
 		);
 	});
+
+	test("(local.set $totalcount (i32x4.neg (local.get $totalcount)))", () => {
+		check(
+			foldedInstrucion.parse(
+				input("(local.set $totalcount (i32x4.neg (local.get $totalcount)))"),
+			),
+		);
+	});
+
+	test("(i32x4.neg (local.get $totalcount))", () => {
+		check(foldedInstrucion.parse(input("(i32x4.neg (local.get $totalcount))")));
+	});
 });
 
 describe("folded block instruction", () => {

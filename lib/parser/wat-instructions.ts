@@ -375,7 +375,10 @@ const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = oneOf([
 						"max_u",
 						"avgr_u",
 						"popcnt",
-					].map(literal),
+					]
+						.sort()
+						.reverse() // to match longer ops first
+						.map(literal),
 				),
 			);
 			return {
