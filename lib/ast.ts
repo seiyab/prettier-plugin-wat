@@ -1,4 +1,6 @@
+import { AST } from "./parser/p";
 import { WatNode } from "./parser/wat";
+import { util } from "prettier";
 
 export function hoistComment(p: WatNode): WatNode {
 	const comments = p.comments ?? [];
@@ -39,3 +41,11 @@ export function isNode(x: unknown): x is WatNode {
 	if (typeof x.type !== "string") return false;
 	return true;
 }
+
+export const isNextLineEmpty = (
+	node: WatNode,
+	{ originalText }: { originalText: string },
+) => util.isNextLineEmpty(originalText, locEnd(node));
+
+export const locStart = (node: AST<WatNode>) => node.loc.start.offset;
+export const locEnd = (node: AST<WatNode>) => node.loc.end.offset;
