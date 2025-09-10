@@ -3,7 +3,7 @@ import { print } from "./lib/printer";
 import { AST } from "./lib/parser/p";
 import { parse, WatNode } from "./lib/parser/wat";
 import { Comment } from "./lib/parser/wat-lexical-format";
-import { isNode, hoistComment } from "./lib/ast";
+import { isNode, hoistComment, locStart, locEnd } from "./lib/ast";
 
 export const languages: SupportLanguage[] = [
 	{ name: "WebAssembly Text", parsers: ["wat"], extensions: [".wat", ".wast"] },
@@ -16,8 +16,8 @@ export const parsers: { [parserName: string]: Parser } = {
 			return hoistComment(ast);
 		},
 		astFormat: "wat",
-		locStart: (node: AST<WatNode>) => node.loc.start.offset,
-		locEnd: (node: AST<WatNode>) => node.loc.end.offset,
+		locStart,
+		locEnd,
 	},
 };
 

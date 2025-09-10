@@ -6,13 +6,16 @@
   ;; Logging function imported from the environment; will print a single
   ;; i32.
   (import "env" "log" (func $log (param  i32)))
+
   ;; Declare linear memory and export it to host. The offset returned by
   ;; $itoa is relative to this memory.
   (memory (export "memory") 1)
+
   ;; Using some memory for a number-->digit ASCII lookup-table, and then the
   ;; space for writing the result of $itoa.
   (data (i32.const 8000) "0123456789")
   (global $itoa_out_buf i32 (i32.const 8010))
+
   ;; itoa: convert an integer to its string representation. Only supports
   ;; numbers >= 0.
   ;; Parameter: the number to convert

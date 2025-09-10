@@ -5,8 +5,10 @@
 (module
   ;; Memory buffer with data imported from the host.
   (import "env" "buffer" (memory 80))
+
   (import "env" "log_i32" (func $log_i32 (param  i32)))
   (import "env" "log_4xi32" (func $log_4xi32 (param  i32 i32 i32 i32)))
+
   ;; vcount counts the number of occurrences of a given value in a buffer.
   ;; the buffer is specified as a start address and the count of i32 values
   ;; to scan. This function assumes that count is a multiple of 4.
@@ -56,6 +58,7 @@
       )
     )
   )
+
   (func $vlog (param $a v128)
     (call $log_4xi32
       (i32x4.extract_lane 0 (local.get $a))

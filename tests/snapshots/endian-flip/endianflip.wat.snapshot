@@ -6,6 +6,7 @@
 (module
   ;; Memory buffer with data imported from the host.
   (import "env" "buffer" (memory 80))
+
   ;; Flips the endianness of the words in the 16-byte buffer at the given
   ;; memory offset.
   ;; Assumes the buffer contains four 4-byte words. The result is written

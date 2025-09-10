@@ -8,8 +8,10 @@
 (module
   ;; Memory buffer with data imported from the host.
   (import "env" "buffer" (memory 80))
+
   (import "env" "log_i32" (func $log_i32 (param  i32)))
   (import "env" "log_4xi32" (func $log_4xi32 (param  i32 i32 i32 i32)))
+
   ;; vmin returns the minimal value in a memory array of i32 values.
   ;; start is the offset in memory where this array starts.
   ;; count is the number of i32 values - each value is 4 bytes. If count=0,
@@ -85,6 +87,7 @@
     )
     (local.get $result)
   )
+
   ;; vargmin returns the index of the minimal value in a memory array of
   ;; i32 values. If there are multiple minimal values, an index of any
   ;; of them can be returned.
@@ -193,6 +196,7 @@
     )
     (local.get $result)
   )
+
   ;; i32min returns min(a, b)
   (func $i32min (export "i32min") (param $a i32) (param $b i32) (result i32)
     (select
@@ -201,6 +205,7 @@
       (i32.lt_s (local.get $a) (local.get $b))
     )
   )
+
   ;; i32max returns max(a, b)
   (func $i32max (export "i32max") (param $a i32) (param $b i32) (result i32)
     (select
@@ -209,6 +214,7 @@
       (i32.gt_s (local.get $a) (local.get $b))
     )
   )
+
   (func $vlog (param $a v128)
     (call $log_4xi32
       (i32x4.extract_lane 0 (local.get $a))
