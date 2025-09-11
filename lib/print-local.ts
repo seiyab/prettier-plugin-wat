@@ -3,7 +3,7 @@ import { Print } from "./types";
 import { Local } from "./parser/wat-modules";
 import { WatNode } from "./parser/wat";
 
-const { group } = doc.builders;
+const { group, join } = doc.builders;
 
 export function printLocal(
 	node: Local,
@@ -14,7 +14,7 @@ export function printLocal(
 	if (node.id) {
 		parts.push(" ", path.call(print, "id"));
 	}
-	parts.push(" ", path.call(print, "v"));
+	parts.push(" ", join(" ", path.map(print, "valtypes")));
 	parts.push(")");
 	return group(parts);
 }

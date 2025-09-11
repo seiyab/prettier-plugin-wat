@@ -17,6 +17,8 @@ const files = [
 	"import-between-modules/mod1.wat",
 	"import-between-modules/mod2.wat",
 	"vector-count-value/vcount.wat",
+	"locals/locals.wat",
+	"loops/loops.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
