@@ -477,14 +477,25 @@ export const module_: Parser<Module> = do_(($) => {
 	};
 });
 
-export type Local = { type: "Local"; id?: AST<Identifier>; v: AST<ValueType> };
+export type Local = {
+	type: "Local";
+	id?: AST<Identifier>;
+	valtypes: AST<ValueType>[];
+};
 const local: Parser<Local> = do_(($) => {
+	const c = commentCollector();
 	void $(literal("("));
 	void $(literal("local"));
 	const id = $(opt(identifier));
-	const v = $(valtype);
+	const v = c.drain($(many(valtype))).nodes;
+	if (v.length === 0) return new Error("local must have at least one valtype");
 	void $(literal(")"));
-	return { type: "Local", id: id.type === "None" ? undefined : id, v };
+	return {
+		type: "Local",
+		id: id.type === "None" ? undefined : id,
+		valtypes: v,
+		comments: c.comments(),
+	};
 });
 
 export type Function = {

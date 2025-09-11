@@ -68,7 +68,10 @@ describe("function", () => {
 					results: [],
 				}),
 				locals: [
-					o({ type: "Local", v: o({ type: "NumberType", value: "f64" }) }),
+					o({
+						type: "Local",
+						valtypes: [o({ type: "NumberType", value: "f64" })],
+					}),
 				],
 				instructions: [
 					o({
