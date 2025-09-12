@@ -14,6 +14,7 @@ const files = [
 	"locals/locals.wat",
 	"loops/loops.wat",
 	"memory-basics/memory-basics.wat",
+	"prime-test/isprime.wat",
 	"recursion/recursion.wat",
 	"select/select.wat",
 	"table-indirect-call/table.wat",
