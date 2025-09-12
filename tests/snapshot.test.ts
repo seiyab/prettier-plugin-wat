@@ -6,19 +6,19 @@ import * as prettier from "prettier";
 const files = [
 	"add/add.wat",
 	"add-not-folded/add-not-folded.wat",
-	"if-expr/ifexpr.wat",
 	"endian-flip/endianflip.wat",
-	"memory-basics/memory-basics.wat",
-	"itoa/itoa.wat",
-	"vector-min/vmin.wat",
-	"select/select.wat",
-	"recursion/recursion.wat",
-	"table-indirect-call/table.wat",
+	"if-expr/ifexpr.wat",
 	"import-between-modules/mod1.wat",
 	"import-between-modules/mod2.wat",
-	"vector-count-value/vcount.wat",
+	"itoa/itoa.wat",
 	"locals/locals.wat",
 	"loops/loops.wat",
+	"memory-basics/memory-basics.wat",
+	"recursion/recursion.wat",
+	"select/select.wat",
+	"table-indirect-call/table.wat",
+	"vector-count-value/vcount.wat",
+	"vector-min/vmin.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..");
