@@ -115,7 +115,7 @@ export type IfInstruction = {
 	blocktype: AST<TypeUse>;
 	then: AST<InstructionNode>[];
 	elseId?: AST<Index>;
-	else: AST<InstructionNode>[];
+	else?: AST<InstructionNode>[];
 	endId?: AST<Index>;
 };
 const ifInstruction: Parser<IfInstruction> = do_(($) => {
@@ -125,9 +125,14 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
 	const then = c.drain($(many(instruction))).nodes;
-	void $(literal("else"));
-	const elseId = $(opt(index));
-	const else_ = c.drain($(many(instruction))).nodes;
+	const hasElse = $(opt(literal("else"))).type !== "None";
+	const { elseId, else_ } =
+		hasElse ?
+			{
+				elseId: dropNone($(opt(index))),
+				else_: c.drain($(many(instruction))).nodes,
+			}
+		:	{ elseId: undefined, else_: undefined };
 	void $(literal("end"));
 	const endId = $(opt(index));
 	return {
@@ -135,7 +140,7 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 		label: dropNone(label),
 		blocktype,
 		then,
-		elseId: dropNone(elseId),
+		elseId: elseId,
 		else: else_,
 		endId: dropNone(endId),
 		comments: c.comments(),

@@ -23,7 +23,7 @@ export function printIfInstruction(
 		parts.push(indent([hardline, join(hardline, path.map(print, "then"))]));
 	}
 
-	if (node.else.length > 0) {
+	if (node.else !== undefined) {
 		parts.push(hardline, "else");
 		if (node.elseId) {
 			parts.push(" ", path.call(print, "elseId"));
