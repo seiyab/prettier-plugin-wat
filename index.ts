@@ -5,14 +5,6 @@ import { parse, WatNode } from "./lib/parser/wat";
 import { Comment } from "./lib/parser/wat-lexical-format";
 import { isNode, hoistComment, locStart, locEnd } from "./lib/ast";
 
-function handleCommentAfterControlStructure(comment: any, text: string, options: any, ast: any): boolean {
-	// This is a placeholder implementation
-	// For now, let Prettier handle all comments normally
-	// TODO: Implement logic to detect comments that appear after 'end' keywords
-	// and should be attached to the next sibling instead of the control structure
-	return false;
-}
-
 export const languages: SupportLanguage[] = [
 	{ name: "WebAssembly Text", parsers: ["wat"], extensions: [".wat", ".wast"] },
 ];
@@ -48,20 +40,37 @@ export const printers: { [astFormat: string]: Printer } = {
 				: [],
 			),
 		isBlockComment: (node: Comment) => node.kind === "block",
-		canAttachComment: (node: WatNode) => node.type !== "Comment",
+		canAttachComment: (node: WatNode) => {
+			// Don't attach comments to Comment nodes
+			if (node.type === "Comment") return false;
+			
+			// For control structures, we need to be more careful about comment attachment
+			// but we'll handle the logic elsewhere since canAttachComment doesn't get the comment
+			return true;
+		},
 		handleComments: {
 			ownLine: (comment, text, options, ast) => {
-				// Handle comments that appear on their own line after control structures
-				return handleCommentAfterControlStructure(comment, text, options, ast);
+				// Handle comments that appear on their own line
+				// Check if this comment appears after an 'end' keyword
+				const commentStart = comment.loc?.start?.offset;
+				if (typeof commentStart !== 'number') {
+					return false; // Let Prettier handle it
+				}
+				
+				// Look backwards from the comment position to see if there's an 'end' keyword
+				const beforeComment = text.substring(0, commentStart);
+				const endMatch = beforeComment.match(/\bend\s*\n\s*$/);
+				
+				if (endMatch) {
+					// This comment appears right after an 'end' keyword
+					// Don't let Prettier attach it to control structures
+					return false; // Let Prettier handle it as a leading comment for the next node
+				}
+				
+				return false; // Let Prettier handle all other cases
 			},
-			endOfLine: (comment, text, options, ast) => {
-				// Let Prettier handle end of line comments by default  
-				return false;
-			},
-			remaining: (comment, text, options, ast) => {
-				// Handle any remaining comments that might be misplaced
-				return handleCommentAfterControlStructure(comment, text, options, ast);
-			}
+			endOfLine: () => false, // Let Prettier handle end-of-line comments
+			remaining: () => false, // Let Prettier handle remaining comments
 		},
 	},
 };
