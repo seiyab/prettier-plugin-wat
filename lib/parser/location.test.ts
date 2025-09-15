@@ -169,3 +169,296 @@ describe("local.get", () => {
 		`);
 	});
 });
+
+test("if", () => {
+	const source = `
+(module
+    ;; is_prime(n) takes a (positive) number and returns 1 if this number is
+    ;; prime, 0 if it's composite.
+    (func $is_prime (export "is_prime") (param $n i32) (result i32)
+        (local $i i32)
+        
+        ;; n < 2 are not prime
+        (i32.lt_u (local.get $n) (i32.const 2))
+        if
+            i32.const 0
+            return
+        end
+
+        ;; n == 2 is prime
+        (i32.eq (local.get $n) (i32.const 2))
+		)
+)`;
+	const out = parse(source);
+	expect(modifyAST(out, source)).toMatchInlineSnapshot(`
+		{
+		  "body": [
+		    {
+		      "comments": [
+		        {
+		          "raw": ";; is_prime(n) takes a (positive) number and returns 1 if this number is",
+		          "type": "Comment",
+		        },
+		        {
+		          "raw": ";; prime, 0 if it's composite.",
+		          "type": "Comment",
+		        },
+		      ],
+		      "modulefields": [
+		        {
+		          "comments": [
+		            {
+		              "raw": ";; n < 2 are not prime",
+		              "type": "Comment",
+		            },
+		            {
+		              "raw": ";; n == 2 is prime",
+		              "type": "Comment",
+		            },
+		          ],
+		          "export_": {
+		            "comments": [],
+		            "name": {
+		              "raw": ""is_prime"",
+		              "type": "StringLiteral",
+		            },
+		            "raw": "(export "is_prime")",
+		            "type": "InlineExport",
+		          },
+		          "id": {
+		            "raw": "$is_prime",
+		            "type": "Identifier",
+		          },
+		          "instructions": [
+		            {
+		              "comments": [],
+		              "operands": [
+		                {
+		                  "comments": [],
+		                  "operands": [],
+		                  "operator": {
+		                    "comments": [],
+		                    "index": {
+		                      "raw": "$n",
+		                      "type": "Identifier",
+		                    },
+		                    "raw": "local.get $n",
+		                    "type": "VariableInstruction",
+		                  },
+		                  "raw": "(local.get $n)",
+		                  "type": "FoldedPlainInstruction",
+		                },
+		                {
+		                  "comments": [],
+		                  "operands": [],
+		                  "operator": {
+		                    "comments": [],
+		                    "raw": "i32.const 2",
+		                    "type": "NumericConstInstruction",
+		                    "val": {
+		                      "raw": "2",
+		                      "type": "Integer",
+		                    },
+		                  },
+		                  "raw": "(i32.const 2)",
+		                  "type": "FoldedPlainInstruction",
+		                },
+		              ],
+		              "operator": {
+		                "comments": [],
+		                "raw": "i32.lt_u",
+		                "type": "NumericSimpleInstruction",
+		              },
+		              "raw": "(i32.lt_u (local.get $n) (i32.const 2))",
+		              "type": "FoldedPlainInstruction",
+		            },
+		            {
+		              "blocktype": {
+		                "comments": [],
+		                "params": [],
+		                "raw": "",
+		                "results": [],
+		                "type": "TypeUse",
+		              },
+		              "comments": [],
+		              "raw": "if
+		            i32.const 0
+		            return
+		        end",
+		              "then": [
+		                {
+		                  "comments": [],
+		                  "raw": "i32.const 0",
+		                  "type": "NumericConstInstruction",
+		                  "val": {
+		                    "raw": "0",
+		                    "type": "Integer",
+		                  },
+		                },
+		                {
+		                  "args": [],
+		                  "comments": [],
+		                  "raw": "return",
+		                  "type": "PlainControlInstruction",
+		                },
+		              ],
+		              "type": "IfInstruction",
+		            },
+		            {
+		              "comments": [],
+		              "operands": [
+		                {
+		                  "comments": [],
+		                  "operands": [],
+		                  "operator": {
+		                    "comments": [],
+		                    "index": {
+		                      "raw": "$n",
+		                      "type": "Identifier",
+		                    },
+		                    "raw": "local.get $n",
+		                    "type": "VariableInstruction",
+		                  },
+		                  "raw": "(local.get $n)",
+		                  "type": "FoldedPlainInstruction",
+		                },
+		                {
+		                  "comments": [],
+		                  "operands": [],
+		                  "operator": {
+		                    "comments": [],
+		                    "raw": "i32.const 2",
+		                    "type": "NumericConstInstruction",
+		                    "val": {
+		                      "raw": "2",
+		                      "type": "Integer",
+		                    },
+		                  },
+		                  "raw": "(i32.const 2)",
+		                  "type": "FoldedPlainInstruction",
+		                },
+		              ],
+		              "operator": {
+		                "comments": [],
+		                "raw": "i32.eq",
+		                "type": "NumericSimpleInstruction",
+		              },
+		              "raw": "(i32.eq (local.get $n) (i32.const 2))",
+		              "type": "FoldedPlainInstruction",
+		            },
+		          ],
+		          "locals": [
+		            {
+		              "comments": [],
+		              "id": {
+		                "raw": "$i",
+		                "type": "Identifier",
+		              },
+		              "raw": "(local $i i32)",
+		              "type": "Local",
+		              "valtypes": [
+		                {
+		                  "comments": [],
+		                  "raw": "i32",
+		                  "type": "NumberType",
+		                },
+		              ],
+		            },
+		          ],
+		          "raw": "(func $is_prime (export "is_prime") (param $n i32) (result i32)
+		        (local $i i32)
+		        
+		        ;; n < 2 are not prime
+		        (i32.lt_u (local.get $n) (i32.const 2))
+		        if
+		            i32.const 0
+		            return
+		        end
+
+		        ;; n == 2 is prime
+		        (i32.eq (local.get $n) (i32.const 2))
+				)",
+		          "type": "Function",
+		          "typeuse": {
+		            "comments": [],
+		            "params": [
+		              {
+		                "comments": [],
+		                "id": {
+		                  "raw": "$n",
+		                  "type": "Identifier",
+		                },
+		                "raw": "(param $n i32)",
+		                "type": "Param",
+		                "valtype": [
+		                  {
+		                    "comments": [],
+		                    "raw": "i32",
+		                    "type": "NumberType",
+		                  },
+		                ],
+		              },
+		            ],
+		            "raw": "(param $n i32) (result i32)
+		        ",
+		            "results": [
+		              {
+		                "comments": [],
+		                "raw": "(result i32)",
+		                "type": "Result",
+		                "valtype": [
+		                  {
+		                    "comments": [],
+		                    "raw": "i32",
+		                    "type": "NumberType",
+		                  },
+		                ],
+		              },
+		            ],
+		            "type": "TypeUse",
+		          },
+		        },
+		      ],
+		      "raw": "(module
+		    ;; is_prime(n) takes a (positive) number and returns 1 if this number is
+		    ;; prime, 0 if it's composite.
+		    (func $is_prime (export "is_prime") (param $n i32) (result i32)
+		        (local $i i32)
+		        
+		        ;; n < 2 are not prime
+		        (i32.lt_u (local.get $n) (i32.const 2))
+		        if
+		            i32.const 0
+		            return
+		        end
+
+		        ;; n == 2 is prime
+		        (i32.eq (local.get $n) (i32.const 2))
+				)
+		)",
+		      "type": "Module",
+		    },
+		  ],
+		  "comments": [],
+		  "raw": "
+		(module
+		    ;; is_prime(n) takes a (positive) number and returns 1 if this number is
+		    ;; prime, 0 if it's composite.
+		    (func $is_prime (export "is_prime") (param $n i32) (result i32)
+		        (local $i i32)
+		        
+		        ;; n < 2 are not prime
+		        (i32.lt_u (local.get $n) (i32.const 2))
+		        if
+		            i32.const 0
+		            return
+		        end
+
+		        ;; n == 2 is prime
+		        (i32.eq (local.get $n) (i32.const 2))
+				)
+		)",
+		  "type": "Program",
+		}
+	`);
+});

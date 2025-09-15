@@ -12,26 +12,23 @@
     if
       i32.const 0
       return
-
-      ;; n == 2 is prime
     end
+    ;; n == 2 is prime
     (i32.eq (local.get $n) (i32.const 2))
     if
       i32.const 1
       return
-
-      ;; Other even numbers are not prime
     end
+    ;; Other even numbers are not prime
     (i32.eq (i32.rem_u (local.get $n) (i32.const 2)) (i32.const 0))
     if
       i32.const 0
       return
-
-      ;; Here we know that n > 2 and that n is odd. Run a loop trying to
-      ;; divide it by all odd numbers smaller than it.
-      ;;
-      ;; for i = 3; i < n; i += 2
     end
+    ;; Here we know that n > 2 and that n is odd. Run a loop trying to
+    ;; divide it by all odd numbers smaller than it.
+    ;;
+    ;; for i = 3; i < n; i += 2
     (local.set $i (i32.const 3))
     (loop $testprime
       (block $breaktestprime
