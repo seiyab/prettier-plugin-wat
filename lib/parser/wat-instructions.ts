@@ -134,7 +134,7 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 			}
 		:	{ elseId: undefined, else_: undefined };
 	void $(literal("end"));
-	const endId = $(opt(index));
+	const endId = $.peek(index) ? dropNone($(opt(index))) : undefined;
 	return {
 		type: "IfInstruction",
 		label: dropNone(label),
@@ -142,7 +142,7 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 		then,
 		elseId: elseId,
 		else: else_,
-		endId: dropNone(endId),
+		endId: endId,
 		comments: c.comments(),
 	};
 });
