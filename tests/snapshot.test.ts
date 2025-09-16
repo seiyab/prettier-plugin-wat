@@ -22,6 +22,7 @@ const files = [
 	"vector-add/vecadd.wat",
 	"vector-count-value/vcount.wat",
 	"vector-min/vmin.wat",
+	"wasi-env-print/envprint.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..");
