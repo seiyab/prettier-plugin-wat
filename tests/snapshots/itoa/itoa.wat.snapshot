@@ -45,6 +45,7 @@
         )
       )
     end
+
     ;; Now that we know the length of the output, we will start populating
     ;; digits into the buffer. E.g. suppose $numlen is 4:
     ;;
@@ -62,6 +63,7 @@
         (i32.const 1)
       )
     )
+
     (loop $writeloop
       (block $breakwriteloop ;; digit <- $num % 10
 
@@ -80,6 +82,7 @@
         br $writeloop
       )
     )
+
     ;; return (itoa_out_buf, numlen)
     (global.get $itoa_out_buf)
     (local.get $numlen)
