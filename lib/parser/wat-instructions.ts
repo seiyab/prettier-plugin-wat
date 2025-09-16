@@ -23,7 +23,7 @@ import {
 	uInteger,
 	UInteger,
 } from "./wat-values";
-import { Comment } from "./wat-lexical-format";
+import { Comment, word } from "./wat-lexical-format";
 import { typeuse, TypeUse } from "./wat-modules";
 
 export type InstructionNode = Instruction | Memarg | Expression;
@@ -155,23 +155,19 @@ type PlainControlInstruction = {
 	args: AST<Index | TypeUse>[];
 };
 
+const pcis = new Set([
+	"unreachable",
+	"nop",
+	"br_if",
+	"br_table",
+	"br",
+	"return",
+	"call_indirect",
+	"call",
+] as const);
+
 const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
-	const op = $(
-		oneOf(
-			(
-				[
-					"unreachable",
-					"nop",
-					"br_if",
-					"br_table",
-					"br",
-					"return",
-					"call_indirect",
-					"call",
-				] as const
-			).map(literal),
-		),
-	).value;
+	const op = $(word(pcis)).value;
 	$.exclusive();
 	const args = ((/* iife */) => {
 		switch (op) {
@@ -271,46 +267,44 @@ export type NumericSimpleInstruction = {
 	op: string;
 };
 
+const nis = new Set([
+	"clz",
+	"ctz",
+	"popcnt",
+	"add",
+	"sub",
+	"mul",
+	"div_s",
+	"div_u",
+	"rem_s",
+	"rem_u",
+	"and",
+	"or",
+	"xor",
+	"shl",
+	"shr_s",
+	"shr_u",
+	"rotl",
+	"rotr",
+
+	"eqz",
+	"eq",
+	"ne",
+	"lt_s",
+	"lt_u",
+	"gt_s",
+	"gt_u",
+	"le_s",
+	"le_u",
+	"ge_s",
+	"ge_u",
+]);
+
 export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 	($) => {
 		const ty = $(oneOf(["i32", "i64", "f32", "f64"].map(literal))).value;
 		void $(literal("."));
-		const op = $(
-			oneOf(
-				[
-					"clz",
-					"ctz",
-					"popcnt",
-					"add",
-					"sub",
-					"mul",
-					"div_s",
-					"div_u",
-					"rem_s",
-					"rem_u",
-					"and",
-					"or",
-					"xor",
-					"shl",
-					"shr_s",
-					"shr_u",
-					"rotl",
-					"rotr",
-
-					"eqz",
-					"eq",
-					"ne",
-					"lt_s",
-					"lt_u",
-					"gt_s",
-					"gt_u",
-					"le_s",
-					"le_u",
-					"ge_s",
-					"ge_u",
-				].map(literal),
-			),
-		).value;
+		const op = $(word(nis)).value;
 		return { type: "NumericSimpleInstruction", op: `${ty}.${op}` };
 	},
 	{ separator: nop },
@@ -352,51 +346,45 @@ export type VectorInstruction =
 	| VectorMemoryInstruction
 	| VectorConstInstruction;
 
+const vis = new Set([
+	"swizzle",
+	"splat",
+	"eq",
+	"ne",
+	"lt_s",
+	"lt_u",
+	"gt_s",
+	"gt_u",
+
+	"abs",
+	"neg",
+	"all_true",
+	"bitmask",
+	"narrow_i16x8_s",
+	"narrow_i16x8_u",
+	"shl",
+	"shr_s",
+	"shr_u",
+	"add",
+	"add_sat_s",
+	"add_sat_u",
+	"sub",
+	"sub_sat_s",
+	"sub_sat_u",
+	"min_s",
+	"min_u",
+	"max_s",
+	"max_u",
+	"avgr_u",
+	"popcnt",
+]);
 type VectorSimpleInstruction = { type: "VectorSimpleInstruction"; op: string };
 const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = oneOf([
 	do_(
 		($) => {
-			const shape = $(oneOf(shapes.map(literal)));
+			const shape = $(word(shapes));
 			void $(literal("."));
-			const op = $(
-				oneOf(
-					[
-						"swizzle",
-						"splat",
-						"eq",
-						"ne",
-						"lt_s",
-						"lt_u",
-						"gt_s",
-						"gt_u",
-
-						"abs",
-						"neg",
-						"all_true",
-						"bitmask",
-						"narrow_i16x8_s",
-						"narrow_i16x8_u",
-						"shl",
-						"shr_s",
-						"shr_u",
-						"add",
-						"add_sat_s",
-						"add_sat_u",
-						"sub",
-						"sub_sat_s",
-						"sub_sat_u",
-						"min_s",
-						"min_u",
-						"max_s",
-						"max_u",
-						"avgr_u",
-						"popcnt",
-					]
-						.sort()
-						.reverse() // to match longer ops first
-						.map(literal),
-				),
-			);
+			const op = $(word(vis));
 			return {
 				type: "VectorSimpleInstruction",
 				op: `${shape.value}.${op.value}`,
@@ -430,7 +418,7 @@ const vectorLaneInstruction: Parser<VectorLaneInstruction> = do_(($) => {
 	const op = $(
 		do_(
 			($) => {
-				const shape = $(oneOf(shapes.map(literal))).value;
+				const shape = $(word(shapes)).value;
 				void $(literal("."));
 				const o = $(
 					oneOf(
@@ -483,7 +471,7 @@ export type VectorConstInstruction = {
 
 const vectorConstInstruction: Parser<VectorConstInstruction> = do_(($) => {
 	const op = $(literal("v128.const")).value;
-	const shape = $(oneOf(shapes.map(literal))).value;
+	const shape = $(word(shapes)).value;
 	const vals = shape.startsWith("i") ? $(many(integer)) : $(many(float));
 	return {
 		type: "VectorConstInstruction",
@@ -501,8 +489,15 @@ export const vectorInstruction = oneOf<VectorInstruction>([
 	vectorConstInstruction,
 ]);
 
-type Shape = (typeof shapes)[number];
-const shapes = ["i8x16", "i16x8", "i32x4", "i64x2", "f32x4", "f64x2"] as const;
+type Shape = typeof shapes extends Set<infer U> ? U : unknown;
+const shapes = new Set([
+	"i8x16",
+	"i16x8",
+	"i32x4",
+	"i64x2",
+	"f32x4",
+	"f64x2",
+] as const);
 
 export type MemoryInstruction = {
 	type: "MemoryInstruction";
@@ -510,33 +505,49 @@ export type MemoryInstruction = {
 	arg?: AST<Memarg> | AST<Index>;
 };
 export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
-	const op = $(oneOf(memops)).value;
+	const op = $(
+		oneOf<{ type: string; value: string }>([
+			do_(
+				($) => {
+					void $(literal("memory"));
+					void $(literal("."));
+					$.exclusive();
+					const o = $(word(mos));
+					return { type: "Temporal", value: `memory.${o.value}` };
+				},
+				{ separator: nop },
+			),
+			do_(
+				($) => {
+					const ty = $(word(new Set(["i32", "i64", "f32", "f64"]))).value;
+					void $(literal("."));
+					const ls = dropNone($(opt(word(new Set(["load", "store"])))));
+					if (ls !== undefined)
+						return { type: "Temporal", value: `${ty}.${ls.value}` };
+					if (!ty.startsWith("i")) return new Error("invalid memory op");
+					const o = $(word(mios));
+					return { type: "Temporal", value: `${ty}.${o.value}` };
+				},
+				{ separator: nop },
+			),
+		]),
+	).value;
 	const arg =
 		op.includes("store") || op.includes("load") ? $(memarg) : undefined;
 	return { type: "MemoryInstruction", op, arg };
 });
-const memops = ["memory.grow", "memory.size", "memory.fill"]
-	.concat(
-		["i32", "i64"].flatMap((ty) =>
-			[
-				"load8_s",
-				"load8_u",
-				"load16_s",
-				"load16_u",
-				"load32_s",
-				"load32_u",
-				"store8",
-				"store16",
-				"store32",
-			].map((o) => `${ty}.${o}`),
-		),
-	)
-	.concat(
-		["i32", "i64", "f32", "f64"].flatMap((ty) =>
-			["load", "store"].map((o) => `${ty}.${o}`),
-		),
-	)
-	.map(literal);
+const mos = new Set(["grow", "size", "fill"] as const);
+const mios = new Set([
+	"load8_s",
+	"load8_u",
+	"load16_s",
+	"load16_u",
+	"load32_s",
+	"load32_u",
+	"store8",
+	"store16",
+	"store32",
+]);
 
 type PlainInstruction =
 	| PlainControlInstruction
