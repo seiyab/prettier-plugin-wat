@@ -17,6 +17,7 @@ const files = [
 	"prime-test/isprime.wat",
 	"recursion/recursion.wat",
 	"select/select.wat",
+	"stack/stack.wat",
 	"table-indirect-call/table.wat",
 	"vector-count-value/vcount.wat",
 	"vector-min/vmin.wat",
