@@ -40,7 +40,7 @@ export const print: Printer<WatNode>["print"] = (
 		case "Module":
 			return printModule(node, path, options, print);
 		case "Function":
-			return printFunction(node, path, print);
+			return printFunction(node, path, options, print);
 		case "FunctionType":
 			return printFunctionType(node, path, print);
 		case "Type":

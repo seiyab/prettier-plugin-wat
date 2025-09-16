@@ -16,6 +16,7 @@
   (func (export "unnamed_locals") (param  i32) (param  i32) (result i32 i32 i32)
     (local i32)
     (local.set 2 (i32.const 44))
+
     ;; This places the first parameter on the stack, then the next parameter
     ;; and finally the local defined in this function.
     (local.get 0)
@@ -29,6 +30,7 @@
     (param $a i32) (param $b i32) (result i32 i32 i32)
     (local $x i32)
     (local.set 2 (i32.const 88))
+
     (local.get 0)
     (local.get 1)
     (local.get 2)
@@ -43,6 +45,7 @@
     ;; and index 3 to the second local.
     (local.set $x (i32.const 77))
     (local.set 3 (i32.const 44))
+
     (local.get 0)
     (local.get $a)
     (local.get $x)
@@ -55,6 +58,7 @@
     (local i32 i32)
     (local.set 2 (i32.const 33))
     (local.set 3 (i32.const 44))
+
     (local.get 0)
     (local.get 1)
     (local.get 2)

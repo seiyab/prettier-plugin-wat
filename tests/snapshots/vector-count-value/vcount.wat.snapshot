@@ -21,6 +21,7 @@
     (local $addr i32)
     ;; Splat val into all lanes of vals, for SIMD comparisons.
     (local.set $vals (i32x4.splat (local.get $val)))
+
     ;; for (i = 0; i < count; i += 4)
     (local.set $i (i32.const 0))
     (loop $countloop
@@ -44,8 +45,10 @@
         br $countloop
       )
     )
+
     ;; Negate totalcount so we get a positive total count in each lane
     (local.set $totalcount (i32x4.neg (local.get $totalcount)))
+
     ;; Sum the lanes of totalcount to get the total count
     (i32.add
       (i32.add

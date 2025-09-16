@@ -2,12 +2,14 @@ import { AstPath, doc, Doc } from "prettier";
 import { Function } from "./parser/wat-modules";
 import { Print } from "./types";
 import { WatNode } from "./parser/wat";
+import { printWithBlankLines } from "./printer-utils";
 
 const { group, indent, hardline, join, line } = doc.builders;
 
 export function printFunction(
 	node: Function,
 	path: AstPath<WatNode>,
+	options: unknown,
 	print: Print,
 ): Doc {
 	const signature: Doc[] = ["(func"];
@@ -23,11 +25,26 @@ export function printFunction(
 	}
 	const parts: Doc[] = [group(signature)];
 	if (node.locals.length > 0) {
-		parts.push(indent([line, group(join(line, path.map(print, "locals")))]));
+		parts.push(
+			indent([
+				line,
+				group(
+					join(line, path.map(printWithBlankLines(print, options), "locals")),
+				),
+			]),
+		);
 	}
 
 	if (node.instructions.length > 0) {
-		parts.push(indent([line, join(hardline, path.map(print, "instructions"))]));
+		parts.push(
+			indent([
+				line,
+				join(
+					hardline,
+					path.map(printWithBlankLines(print, options), "instructions"),
+				),
+			]),
+		);
 	}
 
 	parts.push(hardline, ")");
