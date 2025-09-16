@@ -19,6 +19,7 @@ const files = [
 	"select/select.wat",
 	"stack/stack.wat",
 	"table-indirect-call/table.wat",
+	"vector-add/vecadd.wat",
 	"vector-count-value/vcount.wat",
 	"vector-min/vmin.wat",
 ];

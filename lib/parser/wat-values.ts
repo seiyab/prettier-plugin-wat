@@ -1,6 +1,22 @@
-import { parser, Parser, ParserInput, ParserOutput, oneOf } from "./p";
+import {
+	parser,
+	Parser,
+	ParserInput,
+	ParserOutput,
+	oneOf,
+	do_,
+	nop,
+	literal,
+	opt,
+	dropNone,
+} from "./p";
 
-export type ValueNodes = Identifier | UInteger | Integer | StringLiteral;
+export type ValueNodes =
+	| Identifier
+	| UInteger
+	| Integer
+	| Float
+	| StringLiteral;
 
 export type UInteger = { type: "UInteger"; text: string };
 export const uInteger: Parser<UInteger> = parser(
@@ -71,6 +87,45 @@ export const integer: Parser<Integer> = parser(
 		return { node: { type: "Integer", text }, nextInput: { source, index: i } };
 	},
 );
+
+export type Float = { type: "Float"; text: string };
+export const float: Parser<Float> = do_(
+	($) => {
+		const n = $(num);
+		const dot = $(opt(literal(".")));
+		if (!dot) return { type: "Float", text: n.text };
+		const frac = $(opt(num));
+		return { type: "Float", text: n.text + "." + (dropNone(frac)?.text ?? "") };
+	},
+	{ separator: nop },
+);
+
+type Num = { type: "Num"; text: string };
+const num: Parser<Num> = parser((input): ParserOutput<Num> => {
+	const { source, index } = input;
+	let i = index;
+	while (i < source.length) {
+		if (source[i] >= "0" && source[i] <= "9") {
+			i++;
+			continue;
+		}
+		if (
+			i > index &&
+			source[i] === "_" &&
+			"0" <= source[i + 1] &&
+			source[i + 1] <= "9"
+		) {
+			i += 2;
+			continue;
+		}
+		break;
+	}
+	if (i === index) return new Error("not a number");
+	return {
+		node: { type: "Num", text: source.substring(index, i) },
+		nextInput: { source, index: i },
+	};
+});
 
 export type Identifier = { type: "Identifier"; value: string };
 export function identifier(input: ParserInput): ParserOutput<Identifier> {
