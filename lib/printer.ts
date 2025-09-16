@@ -68,6 +68,8 @@ export const print: Printer<WatNode>["print"] = (
 		case "StringLiteral":
 			return `"${node.value}"`;
 		case "Integer":
+		case "UInteger":
+		case "Float":
 			return node.text;
 		case "FoldedPlainInstruction":
 			return printFoldedPlainInstruction(node, path, print);
@@ -126,8 +128,6 @@ export const print: Printer<WatNode>["print"] = (
 			}
 			return group(parts);
 		}
-		case "UInteger":
-			return node.text;
 		case "VectorMemoryInstruction": {
 			const parts: Doc[] = [node.op];
 			if (node.memarg) {

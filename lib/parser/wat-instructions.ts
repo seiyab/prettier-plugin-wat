@@ -14,6 +14,8 @@ import {
 } from "./p";
 import { Result, result } from "./wat-types";
 import {
+	float,
+	Float,
 	Index,
 	index,
 	integer,
@@ -184,7 +186,6 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 				// TODO
 				return [];
 			case "call":
-				// TODO
 				return [$(index)];
 			case "call_indirect": {
 				const id = $(opt(index));
@@ -317,17 +318,27 @@ export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 
 export type NumericConstInstruction = {
 	type: "NumericConstInstruction";
-	op: "i32.const";
-	val: AST<Integer>;
+	op: string;
+	val: AST<Integer | Float>;
 };
 
-export const numericConstInstruction: Parser<NumericConstInstruction> = do_(
-	($) => {
-		const op = $(literal("i32.const")).value;
-		const val = $(integer);
-		return { type: "NumericConstInstruction", op, val };
-	},
-);
+export const numericConstInstruction: Parser<NumericConstInstruction> =
+	oneOf<NumericConstInstruction>([
+		do_(($) => {
+			const op = $(oneOf(["i32.const", "i64.const"].map(literal))).value;
+			const val = $(integer);
+			return { type: "NumericConstInstruction", op, val };
+		}),
+		do_(($) => {
+			const op = $(
+				oneOf(
+					["i32.const", "i64.const", "f32.const", "f64.const"].map(literal),
+				),
+			).value;
+			const val = $(float);
+			return { type: "NumericConstInstruction", op, val };
+		}),
+	]);
 
 export const numericInstruction: Parser<NumericInstruction> =
 	oneOf<NumericInstruction>([
@@ -467,13 +478,13 @@ export type VectorConstInstruction = {
 	type: "VectorConstInstruction";
 	op: "v128.const";
 	shape: Shape;
-	vals: AST<Integer>[];
+	vals: AST<Integer | Float>[];
 };
 
 const vectorConstInstruction: Parser<VectorConstInstruction> = do_(($) => {
 	const op = $(literal("v128.const")).value;
 	const shape = $(oneOf(shapes.map(literal))).value;
-	const vals = $(many(integer));
+	const vals = shape.startsWith("i") ? $(many(integer)) : $(many(float));
 	return {
 		type: "VectorConstInstruction",
 		op,
