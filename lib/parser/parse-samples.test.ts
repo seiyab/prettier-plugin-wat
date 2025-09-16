@@ -23,6 +23,7 @@ const files = [
 	"vector-count-value/vcount.wat",
 	"vector-min/vmin.wat",
 	"wasi-env-print/envprint.wat",
+	"wasi-fdwrite/write.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
