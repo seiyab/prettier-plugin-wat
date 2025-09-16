@@ -7,6 +7,7 @@ import {
 	ParserInput,
 	ParserOutput,
 	AST,
+	parser,
 	nop,
 } from "./p";
 
@@ -78,3 +79,27 @@ export const gap = do_(
 function linebreak(c: string): boolean {
 	return c === "\n" || c === "\r";
 }
+
+type Word<W extends string> = { type: "Word"; value: W };
+export const word = <W extends string>(words: ReadonlySet<W>) =>
+	parser<Word<W>>((input) => {
+		let i = input.index;
+		for (; i < input.source.length; i++) {
+			const c = input.source[i];
+			if ("a" <= c && c <= "z") continue;
+			if ("0" <= c && c <= "9") continue;
+			if (c === "_") continue;
+			break;
+		}
+		if (i === input.index) {
+			return new Error("expected word");
+		}
+		const value = input.source.substring(input.index, i);
+		if (!words.has(value as W)) {
+			return new Error(`unexpected word: ${value}`);
+		}
+		return {
+			node: { type: "Word", value: value as W },
+			nextInput: { ...input, index: i },
+		};
+	});
