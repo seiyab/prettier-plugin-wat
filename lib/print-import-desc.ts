@@ -3,7 +3,7 @@ import { Print } from "./types";
 import { WatNode } from "./parser/wat";
 import { ImportDesc } from "./parser/wat-modules";
 
-const { group } = doc.builders;
+const { group, indent, line } = doc.builders;
 
 export function printImportDesc(
 	node: ImportDesc,
@@ -14,14 +14,7 @@ export function printImportDesc(
 	if (node.id) {
 		parts.push(" ", path.call(print, "id"));
 	}
-	switch (node.kind) {
-		case "func":
-			parts.push(" ", path.call(print, "target"));
-			break;
-		case "memory":
-			parts.push(" ", path.call(print, "target"));
-			break;
-	}
+	parts.push(indent([line, path.call(print, "target")]));
 	parts.push(")");
 	return group(parts);
 }
