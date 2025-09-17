@@ -203,9 +203,7 @@ type ParametricInstruction = {
 	args?: AST<Result>[];
 };
 const parameticInstruction: Parser<ParametricInstruction> = do_(($) => {
-	const op = $(
-		oneOf([literal<"drop" | "select">("drop"), literal("select")]),
-	).value;
+	const op = $(word(new Set(["drop", "select"] as const))).value;
 	const c = commentCollector();
 	const args = op === "select" ? c.drain($(many(result))).nodes : undefined;
 	return { type: "ParametricInstruction", op, args, comments: c.comments() };
@@ -213,21 +211,19 @@ const parameticInstruction: Parser<ParametricInstruction> = do_(($) => {
 
 type VariableInstruction = {
 	type: "VariableInstruction";
-	op: `${"local" | "global"}.${"get" | "set" | "tee"}`;
+	op: string;
 	index: AST<Index>;
 };
 export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
 	const op = $(
-		oneOf(
-			(
-				[
-					"local.get",
-					"local.set",
-					"local.tee",
-					"global.get",
-					"global.set",
-				] as const
-			).map(literal),
+		do_(
+			($) => {
+				const scope = $(word(new Set(["local", "global"]))).value;
+				void $(literal("."));
+				const action = $(word(new Set(["get", "set", "tee"]))).value;
+				return { type: "Temporal", value: `${scope}.${action}` };
+			},
+			{ separator: nop },
 		),
 	).value;
 	void $.exclusive();
@@ -302,7 +298,7 @@ const nis = new Set([
 
 export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 	($) => {
-		const ty = $(oneOf(["i32", "i64", "f32", "f64"].map(literal))).value;
+		const ty = $(word(new Set(["i32", "i64", "f32", "f64"] as const))).value;
 		void $(literal("."));
 		const op = $(word(nis)).value;
 		return { type: "NumericSimpleInstruction", op: `${ty}.${op}` };
@@ -397,10 +393,16 @@ const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = oneOf([
 			void $(literal("v128"));
 			void $(literal("."));
 			const op = $(
-				oneOf(
-					["not", "and", "andnot", "or", "xor", "bitselect", "any_true"].map(
-						literal,
-					),
+				word(
+					new Set([
+						"not",
+						"and",
+						"andnot",
+						"or",
+						"xor",
+						"bitselect",
+						"any_true",
+					]),
 				),
 			);
 			return { type: "VectorSimpleInstruction", op: `v128.${op.value}` };
@@ -421,13 +423,13 @@ const vectorLaneInstruction: Parser<VectorLaneInstruction> = do_(($) => {
 				const shape = $(word(shapes)).value;
 				void $(literal("."));
 				const o = $(
-					oneOf(
-						[
+					word(
+						new Set([
 							"extract_lane_s",
 							"extract_lane_u",
 							"replace_lane",
 							"extract_lane",
-						].map(literal),
+						]),
 					),
 				).value;
 				return { type: "Temporal", value: `${shape}.${o}` };
@@ -451,7 +453,7 @@ const vectorMemoryInstruction: Parser<VectorMemoryInstruction> = do_(($) => {
 		do_(
 			($) => {
 				void $(literal("v128."));
-				const ls = $(oneOf(["load", "store"].map(literal)));
+				const ls = $(word(new Set(["load", "store"])));
 				return { type: "Temporal", value: `v128.${ls.value}` };
 			},
 			{ separator: nop },
