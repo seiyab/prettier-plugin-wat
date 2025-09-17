@@ -24,6 +24,7 @@ const files = [
 	"vector-min/vmin.wat",
 	"wasi-env-print/envprint.wat",
 	"wasi-fdwrite/write.wat",
+	"wasi-read-file/readfile.wat",
 ];
 
 const root = path.join(import.meta.dirname, "..", "..");
