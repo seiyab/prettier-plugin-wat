@@ -3,7 +3,7 @@ import { Print } from "./types";
 import { Param } from "./parser/wat-types";
 import { WatNode } from "./parser/wat";
 
-const { group, indent, line, fill, join } = doc.builders;
+const { group, indent, join } = doc.builders;
 
 export function printParam(
 	_node: Param,
@@ -14,8 +14,8 @@ export function printParam(
 		indent([
 			"(param ",
 			path.call(print, "id"),
-			line,
-			fill(join(line, path.map(print, "valtype"))),
+			" ",
+			join(" ", path.map(print, "valtype")),
 		]),
 		")",
 	]);

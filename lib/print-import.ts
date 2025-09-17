@@ -3,7 +3,7 @@ import { Print } from "./types";
 import { Import } from "./parser/wat-modules";
 import { WatNode } from "./parser/wat";
 
-const { group } = doc.builders;
+const { group, indent, line } = doc.builders;
 
 export function printImport(
 	node: Import,
@@ -15,8 +15,7 @@ export function printImport(
 		path.call(print, "module"),
 		" ",
 		path.call(print, "name"),
-		" ",
-		path.call(print, "desc"),
+		indent([line, path.call(print, "desc")]),
 		")",
 	]);
 }
