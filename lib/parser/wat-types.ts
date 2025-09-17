@@ -9,6 +9,7 @@ import {
 	many,
 	dropNone,
 } from "./p";
+import { word } from "./wat-lexical-format";
 import { identifier, Identifier, uInteger, UInteger } from "./wat-values";
 
 export type TypeNodes =
@@ -38,7 +39,7 @@ export type ReferenceType = {
 	value: "funcref" | "externref";
 };
 export const reftype: Parser<ReferenceType> = do_(($) => {
-	const out = $(oneOf((["funcref", "externref"] as const).map(literal)));
+	const out = $(word(new Set(["funcref", "externref"] as const)));
 	return { type: "ReferenceType", value: out.value };
 });
 

@@ -40,7 +40,7 @@ import {
 	expr,
 	instruction,
 } from "./wat-instructions";
-import { Comment, gap } from "./wat-lexical-format";
+import { Comment, gap, word } from "./wat-lexical-format";
 
 export type ModuleNodes =
 	| Program
@@ -136,11 +136,10 @@ export type ExportDesc = {
 	kind: "func" | "table" | "memory" | "global";
 	index: AST<Index>;
 };
+const exportKinds = new Set(["func", "table", "memory", "global"] as const);
 const exportdesc = do_(($): ExportDesc => {
 	void $(literal("("));
-	const kind = $(
-		oneOf((["func", "table", "memory", "global"] as const).map(literal)),
-	).value;
+	const kind = $(word(exportKinds)).value;
 	const idx = $(index);
 	void $(literal(")"));
 	return { type: "ExportDesc", kind, index: idx };
