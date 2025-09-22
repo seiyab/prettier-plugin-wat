@@ -2,6 +2,7 @@
  * This file provides domain-inspecific parser implementation &  utilities
  */
 
+import { iife } from "../iife";
 import { Comment, gap } from "./wat-lexical-format";
 
 export type ParserInput = { source: string; index: number };
@@ -24,36 +25,39 @@ export type None = { type: "None" };
 
 type ParseErrorOptions = Partial<{ exclusive: boolean }>;
 
-// Cache for line break positions to avoid repeated string splitting
-const lineBreakCache = new Map<string, number[]>();
-
-function getLineBreaks(source: string): number[] {
-	let lineBreaks = lineBreakCache.get(source);
-	if (lineBreaks === undefined) {
-		lineBreaks = [];
-		for (let i = 0; i < source.length; i++) {
-			if (source[i] === "\n") {
-				lineBreaks.push(i);
+const getLineBreaks = iife(() => {
+	// Cache for line break positions to avoid repeated string splitting
+	const lineBreakCache = new Map<string, number[]>();
+	return getLineBreaks;
+	function getLineBreaks(source: string): number[] {
+		let lineBreaks = lineBreakCache.get(source);
+		if (lineBreaks === undefined) {
+			lineBreaks = [];
+			for (let i = 0; i < source.length; i++) {
+				if (source[i] === "\n") {
+					lineBreaks.push(i);
+				}
 			}
+			lineBreakCache.set(source, lineBreaks);
 		}
-		lineBreakCache.set(source, lineBreaks);
+		return lineBreaks;
 	}
-	return lineBreaks;
-}
+});
 
 export class ParseError extends Error {
-	at: number;
-	exclusive: boolean;
+	private error: string;
+	private input: ParserInput;
+	private at: number;
+	private exclusive: boolean;
 
 	constructor(
 		error: Error | string,
 		input: ParserInput,
 		opts?: ParseErrorOptions,
 	) {
-		const { line, column } = ParseError.position(input);
-		const message = error instanceof Error ? error.message : error;
-
-		super(`at line ${line}, column ${column}: ${message}`);
+		super();
+		this.error = error instanceof Error ? error.message : error;
+		this.input = input;
 		this.name = "ParseError";
 		this.at = input.index;
 		this.exclusive = opts?.exclusive ?? false;
@@ -63,6 +67,12 @@ export class ParseError extends Error {
 		} else {
 			Error.captureStackTrace(this, ParseError);
 		}
+	}
+
+	toString() {
+		const { line, column } = ParseError.position(this.input);
+		const m = `at line ${line}, column ${column}: ${this.error}`;
+		return `${this.name}: ${m}`;
 	}
 
 	static position(input: ParserInput): { line: number; column: number } {
