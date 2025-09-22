@@ -48,7 +48,7 @@ export class ParseError extends Error {
 	private error: string;
 	private input: ParserInput;
 	private at: number;
-	private exclusive: boolean;
+	exclusive: boolean;
 
 	constructor(
 		error: Error | string,
@@ -81,7 +81,6 @@ export class ParseError extends Error {
 		// Binary search to find the line
 		let left = 0;
 		let right = lineBreaks.length;
-
 		while (left < right) {
 			const mid = Math.floor((left + right) / 2);
 			if (lineBreaks[mid] < input.index) {
@@ -150,6 +149,26 @@ export function do_<T extends Node>(
 		let isExclusive = false;
 		const comments: AST<Comment>[] = [];
 
+		// Direct assignment is faster than Object.assign
+		$$.peek = peek;
+		$$.exclusive = exclusive;
+		const $ = $$ as Tools;
+
+		try {
+			const node = process($);
+			if (node instanceof Error) {
+				if (node instanceof ParseError) return node;
+				return new ParseError(node, currentInput);
+			}
+			return {
+				node: { ...node, comments: comments.concat(node.comments ?? []) },
+				nextInput: currentInput,
+			};
+		} catch (e: unknown) {
+			if (e instanceof Interrupt) return e.cause;
+			throw e;
+		}
+
 		// Create tools object directly instead of using Object.assign
 		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
 			let localInput = currentInput;
@@ -198,26 +217,6 @@ export function do_<T extends Node>(
 		function exclusive(): void {
 			isExclusive = true;
 		}
-
-		// Direct assignment is faster than Object.assign
-		$$.peek = peek;
-		$$.exclusive = exclusive;
-		const $ = $$ as Tools;
-
-		try {
-			const node = process($);
-			if (node instanceof Error) {
-				if (node instanceof ParseError) return node;
-				return new ParseError(node, currentInput);
-			}
-			return {
-				node: { ...node, comments: comments.concat(node.comments ?? []) },
-				nextInput: currentInput,
-			};
-		} catch (e: unknown) {
-			if (e instanceof Interrupt) return e.cause;
-			throw e;
-		}
 	}
 }
 
@@ -235,12 +234,9 @@ export function literal<S extends string>(s: S): Parser<Literal<S>> {
 				node: { type: "Literal", value: s },
 				nextInput: { source, index: index + s.length },
 			};
-		// Only create substring for error message when actually needed
-		const actualStr =
-			source.length > index ?
-				source.substring(index, Math.min(index + s.length, source.length))
-			:	"<end of input>";
-		return new Error(`expected ${s}, but got ${actualStr}`);
+		return new Error(
+			`expected ${s}, but got ${source.substring(index, index + s.length)}`,
+		);
 	}
 }
 
