@@ -47,7 +47,7 @@ const getLineBreaks = iife(() => {
 export class ParseError extends Error {
 	private error: string;
 	private input: ParserInput;
-	private at: number;
+	at: number;
 	exclusive: boolean;
 
 	constructor(
