@@ -111,6 +111,16 @@ export const print: Printer<WatNode>["print"] = (
 			return printImport(node, path, print);
 		case "ImportDesc":
 			return printImportDesc(node, path, print);
+		case "Export":
+			return group([
+				"(export ",
+				path.call(print, "name"),
+				" ",
+				path.call(print, "externidx"),
+				")",
+			]);
+		case "ExternIdx":
+			return ["(", node.kind, " ", path.call(print, "index"), ")"];
 		case "MemType":
 			return path.call(print, "limits");
 		case "TableType": {
@@ -181,6 +191,7 @@ export const print: Printer<WatNode>["print"] = (
 			return join(line, path.map(print, "instrs"));
 		}
 		default:
+			// @ts-expect-error exhaustive check
 			throw new Error(`Unknown node type: ${node.type}`);
 	}
 };

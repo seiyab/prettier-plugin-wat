@@ -49,6 +49,7 @@ export type ModuleNodes =
 	| ModuleField
 	| Local
 	| ImportDesc
+	| ExternIdx
 	| OffsetAbbreviation
 	| ElementSegment
 	| ElementList
@@ -121,28 +122,34 @@ export const typeuse: Parser<TypeUse> = do_(($) => {
 export type Export = {
 	type: "Export";
 	name: AST<StringLiteral>;
-	exportdesc: AST<ExportDesc>;
+	externidx: AST<ExternIdx>;
 };
 export const export_: Parser<Export> = do_(($) => {
 	void $(literal("("));
 	void $(literal("export"));
 	const name = $(stringLiteral);
-	const ed = $(exportdesc);
+	const ed = $(externidx);
 	void $(literal(")"));
-	return { type: "Export", name, exportdesc: ed };
+	return { type: "Export", name, externidx: ed };
 });
-export type ExportDesc = {
-	type: "ExportDesc";
-	kind: "func" | "table" | "memory" | "global";
+type ExternIdx = {
+	type: "ExternIdx";
+	kind: "tag" | "func" | "table" | "memory" | "global";
 	index: AST<Index>;
 };
-const exportKinds = new Set(["func", "table", "memory", "global"] as const);
-const exportdesc = do_(($): ExportDesc => {
+const exportKinds = new Set([
+	"tag",
+	"func",
+	"table",
+	"memory",
+	"global",
+] as const);
+const externidx = do_(($): ExternIdx => {
 	void $(literal("("));
 	const kind = $(word(exportKinds)).value;
 	const idx = $(index);
 	void $(literal(")"));
-	return { type: "ExportDesc", kind, index: idx };
+	return { type: "ExternIdx", kind, index: idx };
 });
 
 export type ImportDesc = {
