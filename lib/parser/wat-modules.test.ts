@@ -26,8 +26,8 @@ describe("module", () => {
 					o({
 						type: "Export",
 						name: o({ type: "StringLiteral", value: "f" }),
-						exportdesc: o({
-							type: "ExportDesc",
+						externidx: o({
+							type: "ExternIdx",
 							kind: "func",
 							index: o({ type: "Identifier", value: "$f" }),
 						}),
