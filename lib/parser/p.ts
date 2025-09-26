@@ -2,6 +2,7 @@
  * This file provides domain-inspecific parser implementation &  utilities
  */
 
+import { iife } from "../iife";
 import { Comment, gap } from "./wat-lexical-format";
 
 export type ParserInput = { source: string; index: number };
@@ -23,7 +24,29 @@ export type Unknown = { type: "Unknown"; value: string };
 export type None = { type: "None" };
 
 type ParseErrorOptions = Partial<{ exclusive: boolean }>;
+
+const getLineBreaks = iife(() => {
+	// Cache for line break positions to avoid repeated string splitting
+	const lineBreakCache = new Map<string, number[]>();
+	return getLineBreaks;
+	function getLineBreaks(source: string): number[] {
+		let lineBreaks = lineBreakCache.get(source);
+		if (lineBreaks === undefined) {
+			lineBreaks = [];
+			for (let i = 0; i < source.length; i++) {
+				if (source[i] === "\n") {
+					lineBreaks.push(i);
+				}
+			}
+			lineBreakCache.set(source, lineBreaks);
+		}
+		return lineBreaks;
+	}
+});
+
 export class ParseError extends Error {
+	private error: string;
+	private input: ParserInput;
 	at: number;
 	exclusive: boolean;
 
@@ -32,10 +55,9 @@ export class ParseError extends Error {
 		input: ParserInput,
 		opts?: ParseErrorOptions,
 	) {
-		const { line, column } = ParseError.position(input);
-		const message = error instanceof Error ? error.message : error;
-
-		super(`at line ${line}, column ${column}: ${message}`);
+		super();
+		this.error = error instanceof Error ? error.message : error;
+		this.input = input;
 		this.name = "ParseError";
 		this.at = input.index;
 		this.exclusive = opts?.exclusive ?? false;
@@ -47,17 +69,29 @@ export class ParseError extends Error {
 		}
 	}
 
+	toString() {
+		const { line, column } = ParseError.position(this.input);
+		const m = `at line ${line}, column ${column}: ${this.error}`;
+		return `${this.name}: ${m}`;
+	}
+
 	static position(input: ParserInput): { line: number; column: number } {
-		const lines = input.source.split("\n");
-		let i = 0;
-		let cnt = 0;
-		for (const line of lines) {
-			const len = line.length + 1;
-			if (input.index <= cnt + len) break;
-			i += 1;
-			cnt += len;
+		const lineBreaks = getLineBreaks(input.source);
+
+		// Binary search to find the line
+		let left = 0;
+		let right = lineBreaks.length;
+		while (left < right) {
+			const mid = Math.floor((left + right) / 2);
+			if (lineBreaks[mid] < input.index) {
+				left = mid + 1;
+			} else {
+				right = mid;
+			}
 		}
-		return { line: i + 1, column: input.index - cnt + 1 };
+
+		const lineStart = left === 0 ? 0 : lineBreaks[left - 1] + 1;
+		return { line: left + 1, column: input.index - lineStart + 1 };
 	}
 }
 
@@ -115,7 +149,10 @@ export function do_<T extends Node>(
 		let isExclusive = false;
 		const comments: AST<Comment>[] = [];
 
-		const $ = Object.assign($$, { peek, exclusive });
+		// Direct assignment is faster than Object.assign
+		$$.peek = peek;
+		$$.exclusive = exclusive;
+		const $ = $$ as Tools;
 
 		try {
 			const node = process($);
@@ -132,6 +169,7 @@ export function do_<T extends Node>(
 			throw e;
 		}
 
+		// Create tools object directly instead of using Object.assign
 		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
 			let localInput = currentInput;
 			let localComments: AST<Comment>[] = [];
@@ -142,7 +180,11 @@ export function do_<T extends Node>(
 					localComments = g.node.comments ?? [];
 				}
 			}
-			const out = parser(p).parse(localInput);
+			// Avoid calling parser() if p is already a Parser
+			const out =
+				typeof p === "function" ?
+					parser(p).parse(localInput)
+				:	p.parse(localInput);
 			if (out instanceof ParseError) {
 				if (isExclusive) out.exclusive = true;
 				throw new Interrupt(out);
@@ -164,7 +206,11 @@ export function do_<T extends Node>(
 					tempInput = g.nextInput;
 				}
 			}
-			const out = parser(p).parse(tempInput);
+			// Avoid calling parser() if p is already a Parser
+			const out =
+				typeof p === "function" ?
+					parser(p).parse(tempInput)
+				:	p.parse(tempInput);
 			return !(out instanceof Error);
 		}
 
