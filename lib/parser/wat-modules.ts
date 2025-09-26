@@ -33,6 +33,8 @@ import {
 	functype,
 	ReferenceType,
 	reftype,
+	GlobalType,
+	globaltype,
 } from "./wat-types";
 import {
 	Expression,
@@ -422,7 +424,7 @@ const offsetAbbreviation: Parser<OffsetAbbreviation> = do_(($) => {
 export type Global = {
 	type: "Global";
 	id?: AST<Identifier>;
-	globaltype: AST<ValueType>; // TODO: mut
+	globaltype: AST<GlobalType>;
 	expr: AST<InstructionNode>[];
 };
 const global_: Parser<Global> = do_(($) => {
@@ -430,10 +432,10 @@ const global_: Parser<Global> = do_(($) => {
 	void $(literal("("));
 	void $(literal("global"));
 	const id = $(opt(identifier));
-	const globaltype = $(valtype);
+	const gt = $(globaltype);
 	const expr = c.drain($(many(instruction))).nodes;
 	void $(literal(")"));
-	return { type: "Global", id: dropNone(id), globaltype, expr };
+	return { type: "Global", id: dropNone(id), globaltype: gt, expr };
 });
 
 export type Module = {

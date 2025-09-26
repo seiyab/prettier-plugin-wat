@@ -121,6 +121,12 @@ export const print: Printer<WatNode>["print"] = (
 			]);
 		case "ExternIdx":
 			return ["(", node.kind, " ", path.call(print, "index"), ")"];
+		case "GlobalType":
+			return [
+				node.mut ? "(mut " : "",
+				path.call(print, "valtype"),
+				node.mut ? ")" : "",
+			];
 		case "MemType":
 			return path.call(print, "limits");
 		case "TableType": {
