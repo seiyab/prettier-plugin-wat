@@ -23,7 +23,7 @@ export const uInteger: Parser<UInteger> = parser(
 	(input): ParserOutput<UInteger> => {
 		const { source, index } = input;
 		let i = index;
-		if (source.substring(i, i + 2) === "0x") {
+		if (source.startsWith("0x", i)) {
 			const hexStartIndex = i + 2;
 			i += 2;
 			while (
