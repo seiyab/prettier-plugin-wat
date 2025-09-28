@@ -1,5 +1,8 @@
 # prettier-plugin-wat
 
+> **Note**
+> This plugin is currently in alpha. It may not support all WebAssembly Text Format syntax yet.
+
 This is a Prettier plugin for the WebAssembly Text Format (`.wat`).
 
 ## Installation
@@ -33,3 +36,4 @@ See [DEVELOPMENT.md](./DEVELOPMENT.md) for details on how to develop this plugin
 ## License
 
 [MIT](./LICENSE)
+
