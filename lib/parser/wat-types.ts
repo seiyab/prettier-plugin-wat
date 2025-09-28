@@ -19,6 +19,7 @@ export type TypeNodes =
 	| Param
 	| Result
 	| Limits
+	| GlobalType
 	| MemType
 	| TableType;
 
@@ -107,6 +108,26 @@ const limits: Parser<Limits> = do_(($) => {
 	const min = $(uInteger);
 	const max = $(opt(uInteger));
 	return { type: "Limits", min, max: dropNone(max) };
+});
+
+export type GlobalType = {
+	type: "GlobalType";
+	mut: boolean;
+	valtype: AST<ValueType>;
+};
+export const globaltype: Parser<GlobalType> = do_(($) => {
+	const mut_ = $(
+		opt(
+			do_(($) => {
+				void $(literal("("));
+				void $(literal("mut"));
+				return { type: "Temporal" };
+			}),
+		),
+	);
+	const valtype_ = $(valtype);
+	if (mut_.type !== "None") void $(literal(")"));
+	return { type: "GlobalType", mut: mut_.type !== "None", valtype: valtype_ };
 });
 
 export type MemType = { type: "MemType"; limits: AST<Limits> };
