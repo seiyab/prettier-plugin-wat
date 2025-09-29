@@ -22,4 +22,4 @@ jobs:
       - run: npm install -g npm@11.6.1 # Ensure npm 11.5.1 or later is installed for OIDC
       - run: npm install
       - run: npm run check
-      - run: npm publish
+      - run: npm publish --tag alpha
