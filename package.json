@@ -18,7 +18,7 @@
 	"type": "module",
 	"main": "dist/index.mjs",
 	"scripts": {
-		"build": "rm -r dist && ./scripts/build.mjs",
+		"build": "rm -rf dist && ./scripts/build.mjs",
 		"prepublishOnly": "npm run build",
 		"test": "npm run build && vitest run",
 		"test:update-snapshots": "npm run build && vitest run --update",
