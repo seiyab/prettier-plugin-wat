@@ -1,6 +1,6 @@
 {
 	"name": "prettier-plugin-wat",
-	"version": "0.0.1-alpha.3",
+	"version": "0.0.1-alpha.4",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/seiyab/prettier-plugin-wat.git"
@@ -16,9 +16,9 @@
 	"license": "MIT",
 	"author": "Seiya",
 	"type": "module",
-	"main": "dist/index.js",
+	"main": "dist/index.mjs",
 	"scripts": {
-		"build": "./scripts/build.mjs",
+		"build": "rm -r dist && ./scripts/build.mjs",
 		"prepublishOnly": "npm run build",
 		"test": "npm run build && vitest run",
 		"test:update-snapshots": "npm run build && vitest run --update",
