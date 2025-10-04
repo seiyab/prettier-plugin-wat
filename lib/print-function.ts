@@ -14,12 +14,12 @@ export function printFunction(
 ): Doc {
 	const signature: Doc[] = ["(func"];
 	if (node.id) {
-		signature.push(" ", path.call(print, "id"));
+		signature.push(" ", print("id"));
 	}
 	if (node.export_) {
-		signature.push(" ", path.call(print, "export_"));
+		signature.push(" ", print("export_"));
 	}
-	const typeuse = path.call(print, "typeuse");
+	const typeuse = print("typeuse");
 	if (typeuse !== "") {
 		signature.push(indent([line, typeuse]));
 	}

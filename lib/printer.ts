@@ -64,7 +64,7 @@ export const print: Printer<WatNode>["print"] = (
 		case "ReferenceType":
 			return node.value;
 		case "InlineExport":
-			return group(["(export ", path.call(print, "name"), ")"]);
+			return group(["(export ", print("name"), ")"]);
 		case "StringLiteral":
 			return `"${node.value}"`;
 		case "Integer":
@@ -74,11 +74,11 @@ export const print: Printer<WatNode>["print"] = (
 		case "FoldedPlainInstruction":
 			return printFoldedPlainInstruction(node, path, print);
 		case "VariableInstruction":
-			return [node.op, " ", path.call(print, "index")];
+			return [node.op, " ", print("index")];
 		case "NumericSimpleInstruction":
 			return node.op;
 		case "NumericConstInstruction":
-			return [node.op, " ", path.call(print, "val")];
+			return [node.op, " ", print("val")];
 		case "Comment":
 			throw new Error("should not be reached if printComment is defined");
 		case "FoldedIfInstruction":
@@ -112,42 +112,28 @@ export const print: Printer<WatNode>["print"] = (
 		case "ImportDesc":
 			return printImportDesc(node, path, print);
 		case "Export":
-			return group([
-				"(export ",
-				path.call(print, "name"),
-				" ",
-				path.call(print, "externidx"),
-				")",
-			]);
+			return group(["(export ", print("name"), " ", print("externidx"), ")"]);
 		case "ExternIdx":
-			return ["(", node.kind, " ", path.call(print, "index"), ")"];
+			return ["(", node.kind, " ", print("index"), ")"];
 		case "GlobalType":
-			return [
-				node.mut ? "(mut " : "",
-				path.call(print, "valtype"),
-				node.mut ? ")" : "",
-			];
+			return [node.mut ? "(mut " : "", print("valtype"), node.mut ? ")" : ""];
 		case "MemType":
-			return path.call(print, "limits");
+			return print("limits");
 		case "TableType": {
-			const parts: Doc[] = [
-				path.call(print, "limits"),
-				" ",
-				path.call(print, "reftype"),
-			];
+			const parts: Doc[] = [print("limits"), " ", print("reftype")];
 			return group(parts);
 		}
 		case "Limits": {
-			const parts: Doc[] = [path.call(print, "min")];
+			const parts: Doc[] = [print("min")];
 			if (node.max) {
-				parts.push(" ", path.call(print, "max"));
+				parts.push(" ", print("max"));
 			}
 			return group(parts);
 		}
 		case "VectorMemoryInstruction": {
 			const parts: Doc[] = [node.op];
 			if (node.memarg) {
-				parts.push(" ", path.call(print, "memarg"));
+				parts.push(" ", print("memarg"));
 			}
 			return group(parts);
 		}
@@ -158,7 +144,7 @@ export const print: Printer<WatNode>["print"] = (
 		case "VectorSimpleInstruction":
 			return node.op;
 		case "VectorLaneInstruction": {
-			const parts: Doc[] = [node.op, " ", path.call(print, "laneidx")];
+			const parts: Doc[] = [node.op, " ", print("laneidx")];
 			return group(parts);
 		}
 		case "Memory":
@@ -168,7 +154,7 @@ export const print: Printer<WatNode>["print"] = (
 		case "DataSegment":
 			return printDataSegment(node, path, print);
 		case "OffsetAbbreviation": {
-			return group(["(", path.call(print, "instr"), ")"]);
+			return group(["(", print("instr"), ")"]);
 		}
 		case "MemoryInstruction": {
 			return [node.op];
@@ -180,7 +166,7 @@ export const print: Printer<WatNode>["print"] = (
 		case "ElementSegment":
 			return printElementSegment(node, path, print);
 		case "ElementList": {
-			const parts: Doc[] = [path.call(print, "reftype")];
+			const parts: Doc[] = [print("reftype")];
 			parts.push(indent([line, join(line, path.map(print, "elemexprs"))]));
 			return group(parts);
 		}
@@ -188,10 +174,10 @@ export const print: Printer<WatNode>["print"] = (
 			return join(line, path.map(print, "funcidxs"));
 		}
 		case "ElementExpr": {
-			return group(["(item ", path.call(print, "expr"), ")"]);
+			return group(["(item ", print("expr"), ")"]);
 		}
 		case "TableUse": {
-			return group(["(table ", path.call(print, "index"), ")"]);
+			return group(["(table ", print("index"), ")"]);
 		}
 		case "Expression": {
 			return join(line, path.map(print, "instrs"));

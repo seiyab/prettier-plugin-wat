@@ -12,12 +12,12 @@ export function printMemory(
 ): Doc {
 	const parts: Doc[] = ["(memory"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
 	if (node.export) {
-		parts.push(" ", path.call(print, "export"));
+		parts.push(" ", print("export"));
 	}
-	parts.push(" ", path.call(print, "memtype"));
+	parts.push(" ", print("memtype"));
 	parts.push(")");
 	return group(parts);
 }

@@ -12,7 +12,7 @@ export function printLocal(
 ): Doc {
 	const parts: Doc[] = ["(local"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
 	parts.push(" ", join(" ", path.map(print, "valtypes")));
 	parts.push(")");

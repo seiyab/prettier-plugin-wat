@@ -12,18 +12,18 @@ export function printElementSegment(
 ): Doc {
 	const parts: Doc[] = ["(elem"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
 	if (node.mode === "declarative") {
 		parts.push(" declare");
 	}
 	if (node.tableuse) {
-		parts.push(" ", path.call(print, "tableuse"));
+		parts.push(" ", print("tableuse"));
 	}
 	if (node.offset) {
-		parts.push(" (offset ", path.call(print, "offset"), ")");
+		parts.push(" (offset ", print("offset"), ")");
 	}
-	parts.push(indent([line, path.call(print, "elemlist")]));
+	parts.push(indent([line, print("elemlist")]));
 	parts.push(")");
 	return group(parts);
 }

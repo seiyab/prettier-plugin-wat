@@ -12,7 +12,7 @@ export function printFoldedIfInstruction(
 ): Doc {
 	const parts: Doc[] = ["(if"];
 	if (node.result) {
-		parts.push(" ", path.call(print, "result"));
+		parts.push(" ", print("result"));
 	}
 	if (node.cond.length > 0) {
 		parts.push(indent([line, join(line, path.map(print, "cond"))]));

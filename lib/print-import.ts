@@ -12,10 +12,10 @@ export function printImport(
 ): Doc {
 	return group([
 		"(import ",
-		path.call(print, "module"),
+		print("module"),
 		" ",
-		path.call(print, "name"),
-		indent([line, path.call(print, "desc")]),
+		print("name"),
+		indent([line, print("desc")]),
 		")",
 	]);
 }

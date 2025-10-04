@@ -13,7 +13,7 @@ export function printParam(
 	return group([
 		indent([
 			"(param ",
-			path.call(print, "id"),
+			print("id"),
 			" ",
 			join(" ", path.map(print, "valtype")),
 		]),

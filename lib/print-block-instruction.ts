@@ -12,9 +12,9 @@ export function printBlockInstruction(
 ): Doc {
 	const parts: Doc[] = ["block"];
 	if (node.label) {
-		parts.push(" ", path.call(print, "label"));
+		parts.push(" ", print("label"));
 	}
-	const blocktype = path.call(print, "blocktype");
+	const blocktype = print("blocktype");
 	if (blocktype !== "") {
 		parts.push(" ", blocktype);
 	}
@@ -25,7 +25,7 @@ export function printBlockInstruction(
 	}
 	parts.push(hardline, "end");
 	if (node.endId) {
-		parts.push(" ", path.call(print, "endId"));
+		parts.push(" ", print("endId"));
 	}
 	return group(parts);
 }

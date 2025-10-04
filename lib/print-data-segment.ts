@@ -12,9 +12,9 @@ export function printDataSegment(
 ): Doc {
 	const parts: Doc[] = ["(data"];
 	if (node.memuse) {
-		parts.push(" ", path.call(print, "memuse"));
+		parts.push(" ", print("memuse"));
 	}
-	parts.push(" ", path.call(print, "offset"));
+	parts.push(" ", print("offset"));
 	if (node.inits.length > 0) {
 		parts.push(indent([line, join(line, path.map(print, "inits"))]));
 	}
