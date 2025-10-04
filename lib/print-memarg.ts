@@ -12,10 +12,10 @@ export function printMemarg(
 ): Doc {
 	const parts: Doc[] = [];
 	if (node.offset) {
-		parts.push(["offset=", path.call(print, "offset")]);
+		parts.push(["offset=", print("offset")]);
 	}
 	if (node.align) {
-		parts.push(" ", ["align=", path.call(print, "align")]);
+		parts.push(" ", ["align=", print("align")]);
 	}
 	return group(parts);
 }

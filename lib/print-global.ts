@@ -12,9 +12,9 @@ export function printGlobal(
 ): Doc {
 	const parts: Doc[] = ["(global"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
-	parts.push(" ", path.call(print, "globaltype"));
+	parts.push(" ", print("globaltype"));
 	parts.push(indent([line, join(line, path.map(print, "expr"))]));
 	parts.push(")");
 	return group(parts);

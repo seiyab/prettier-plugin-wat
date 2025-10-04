@@ -12,7 +12,7 @@ export function printTypeUse(
 ): Doc {
 	const parts: Doc[] = [];
 	if (node.index !== undefined) {
-		parts.push(group(["(type ", path.call(print, "index"), ")"]));
+		parts.push(group(["(type ", print("index"), ")"]));
 	}
 	if (node.params.length > 0) {
 		parts.push(indent(group(join(line, path.map(print, "params")))));

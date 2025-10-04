@@ -14,7 +14,7 @@ export function printModule(
 ) {
 	const parts: Doc[] = ["(module"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
 	if (node.modulefields && node.modulefields.length > 0) {
 		parts.push(

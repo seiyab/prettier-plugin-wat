@@ -12,9 +12,9 @@ export function printImportDesc(
 ): Doc {
 	const parts: Doc[] = ["(", node.kind];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
-	parts.push(indent([line, path.call(print, "target")]));
+	parts.push(indent([line, print("target")]));
 	parts.push(")");
 	return group(parts);
 }

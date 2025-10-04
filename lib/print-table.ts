@@ -12,12 +12,12 @@ export function printTable(
 ): Doc {
 	const parts: Doc[] = ["(table"];
 	if (node.id) {
-		parts.push(" ", path.call(print, "id"));
+		parts.push(" ", print("id"));
 	}
 	if (node.export) {
-		parts.push(" ", path.call(print, "export"));
+		parts.push(" ", print("export"));
 	}
-	parts.push(" ", path.call(print, "tabletype"));
+	parts.push(" ", print("tabletype"));
 	parts.push(")");
 	return group(parts);
 }

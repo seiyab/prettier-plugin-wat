@@ -17,5 +17,5 @@ export function printFoldedPlainInstruction(
 			softline,
 		);
 	}
-	return group(["(", path.call(print, "operator"), body, ")"]);
+	return group(["(", print("operator"), body, ")"]);
 }

@@ -12,9 +12,9 @@ export function printFoldedBlockInstruction(
 ): Doc {
 	const parts: Doc[] = ["(block"];
 	if (node.label) {
-		parts.push(" ", path.call(print, "label"));
+		parts.push(" ", print("label"));
 	}
-	const blocktype = path.call(print, "blocktype");
+	const blocktype = print("blocktype");
 	if (blocktype !== "") {
 		parts.push(" ", blocktype);
 	}
