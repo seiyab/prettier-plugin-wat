@@ -35,6 +35,8 @@ import {
 	reftype,
 	GlobalType,
 	globaltype,
+	AddressType,
+	addresstype,
 } from "./wat-types";
 import {
 	Expression,
@@ -43,6 +45,7 @@ import {
 	instruction,
 } from "./wat-instructions";
 import { Comment, gap, word } from "./wat-lexical-format";
+import { assert, Assert } from "./wat-spec-test";
 
 export type ModuleNodes =
 	| Program
@@ -61,14 +64,14 @@ export type ModuleNodes =
 	| DataSegment;
 export type ModuleElement = FunctionElement;
 
-export type Program = { type: "Program"; body: AST<Module>[] };
+export type Program = { type: "Program"; body: AST<Module | Assert>[] };
 export const program: Parser<Program> = do_(($) => {
 	const comments: AST<Comment>[] = [];
-	const body: AST<Module>[] = [];
+	const body: AST<Module | Assert>[] = [];
 	comments.push(...$(gap).comments);
 	for (;;) {
 		if (!$.peek(literal("("))) break;
-		const m = $(module_);
+		const m = $(oneOf<Module | Assert>([module_, assert]));
 		body.push(m);
 	}
 	comments.push(...$(gap).comments);
@@ -261,7 +264,6 @@ export type Table = {
 	export?: AST<InlineExport>;
 	tabletype: AST<TableType>;
 };
-
 const table: Parser<Table> = do_(($) => {
 	void $(literal("("));
 	void $(literal("table"));
@@ -274,6 +276,33 @@ const table: Parser<Table> = do_(($) => {
 		id: id.type === "None" ? undefined : id,
 		export: ex.type === "None" ? undefined : ex,
 		tabletype: tt,
+	};
+});
+
+export type InlineTable = {
+	type: "InlineTable";
+	id?: AST<Identifier>;
+	at?: AST<AddressType>;
+	reftype: AST<ReferenceType>;
+	elemlist: AST<ElementList | ElementListAbbreviation>;
+};
+export const inlineTable: Parser<InlineTable> = do_(($) => {
+	void $(literal("("));
+	void $(literal("table"));
+	const id = $(opt(identifier));
+	const at = $(opt(addresstype));
+	const rt = $(reftype);
+	void $(literal("("));
+	void $(literal("elem"));
+	const elemlist_ = $(elemlist);
+	void $(literal(")"));
+	void $(literal(")"));
+	return {
+		type: "InlineTable",
+		id: dropNone(id),
+		at: dropNone(at),
+		reftype: rt,
+		elemlist: elemlist_,
 	};
 });
 
@@ -449,6 +478,7 @@ type ModuleField =
 	| Import
 	| Function
 	| Table
+	| InlineTable
 	| Memory
 	| Global
 	| Export
@@ -471,6 +501,7 @@ export const module_: Parser<Module> = do_(($) => {
 					memory_,
 					global_,
 					table,
+					inlineTable,
 					element,
 					data,
 				]),
