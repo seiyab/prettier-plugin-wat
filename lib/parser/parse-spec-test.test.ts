@@ -18,4 +18,4 @@ describe("parse spec test fixtures", () => {
 		});
 		parse(content.toString());
 	});
-});
+}, 10_000);

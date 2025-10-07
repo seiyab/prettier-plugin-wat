@@ -4,6 +4,7 @@ import { TypeNodes } from "./wat-types";
 import { ValueNodes } from "./wat-values";
 import { Comment } from "./wat-lexical-format";
 import { InstructionNode } from "./wat-instructions";
+import { Assert } from "./wat-spec-test";
 
 export type WatNode = AST<
 	| ModuleNodes
@@ -12,6 +13,7 @@ export type WatNode = AST<
 	| TypeNodes
 	| InstructionNode
 	| Comment
+	| Assert
 >;
 
 export function parse(source: string): AST<Program> {
