@@ -3,7 +3,7 @@ import { Print } from "./types";
 import { InlineTable, Table } from "./parser/wat-modules";
 import { WatNode } from "./parser/wat";
 
-const { group, join, line, softline, indent } = doc.builders;
+const { group, line, softline, indent } = doc.builders;
 
 export function printTable(
 	node: Table,
