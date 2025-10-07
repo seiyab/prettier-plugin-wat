@@ -17,11 +17,12 @@ import { printImportDesc } from "./print-import-desc";
 import { printMemarg } from "./print-memarg";
 import { printVectorConstInstruction } from "./print-vector-const-instruction";
 import { printMemory } from "./print-memory";
-import { printTable } from "./print-table";
+import { printInlineTable, printTable } from "./print-table";
 import { printDataSegment } from "./print-data-segment";
 import { printLocal } from "./print-local";
 import { printGlobal } from "./print-global";
 import { printElementSegment } from "./print-element-segment";
+import { printAssertReturn, printAssertInvalid } from "./print-assert";
 import { Print } from "./types";
 import { printType } from "./print-type";
 
@@ -151,6 +152,8 @@ export const print: Printer<WatNode>["print"] = (
 			return printMemory(node, path, print);
 		case "Table":
 			return printTable(node, path, print);
+		case "InlineTable":
+			return printInlineTable(node, path, print);
 		case "DataSegment":
 			return printDataSegment(node, path, print);
 		case "OffsetAbbreviation": {
@@ -182,8 +185,14 @@ export const print: Printer<WatNode>["print"] = (
 		case "Expression": {
 			return join(line, path.map(print, "instrs"));
 		}
+		case "AssertReturn":
+			return printAssertReturn(node, path, print);
+		case "AssertInvalid":
+			return printAssertInvalid(node, path, print);
 		default:
-			// @ts-expect-error exhaustive check
-			throw new Error(`Unknown node type: ${node.type}`);
+			throw new Error(
+				// @ts-expect-error exhaustive check
+				`Unknown node type: ${node.type} (value: ${JSON.stringify(node)})`,
+			);
 	}
 };

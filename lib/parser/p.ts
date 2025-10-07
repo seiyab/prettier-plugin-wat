@@ -69,6 +69,10 @@ export class ParseError extends Error {
 		}
 	}
 
+	get message() {
+		return this.toString();
+	}
+
 	toString() {
 		const { line, column } = ParseError.position(this.input);
 		const m = `at line ${line}, column ${column}: ${this.error}`;

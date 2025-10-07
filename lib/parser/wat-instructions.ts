@@ -25,6 +25,7 @@ import {
 } from "./wat-values";
 import { Comment, word } from "./wat-lexical-format";
 import { typeuse, TypeUse } from "./wat-modules";
+import { iife } from "../iife";
 
 export type InstructionNode = Instruction | Memarg | Expression;
 
@@ -169,7 +170,8 @@ const pcis = new Set([
 const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 	const op = $(word(pcis)).value;
 	$.exclusive();
-	const args = ((/* iife */) => {
+	const c = commentCollector();
+	const args = iife(() => {
 		switch (op) {
 			case "unreachable":
 			case "nop":
@@ -179,8 +181,7 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 			case "br_if":
 				return [$(index)];
 			case "br_table":
-				// TODO
-				return [];
+				return c.drain($(many(index))).nodes;
 			case "call":
 				return [$(index)];
 			case "call_indirect": {
@@ -193,7 +194,7 @@ const plainControlInstruction: Parser<PlainControlInstruction> = do_(($) => {
 				op satisfies never;
 				return [];
 		}
-	})();
+	});
 	return { type: "PlainControlInstruction", op, args };
 });
 

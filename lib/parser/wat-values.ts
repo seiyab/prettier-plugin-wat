@@ -147,7 +147,7 @@ const idchars = new Set(
 		"0123456789".split(""),
 		"abcdefghijklmnopqrstuvwxyz".split(""),
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
-		"_".split(""),
+		"_-".split(""),
 		// TODO: add valid non-alphanumeric characters
 	].flat(),
 );

@@ -10,3 +10,7 @@
 [submodule "references/wasm-wat-samples"]
 	path = references/wasm-wat-samples
 	url = https://github.com/eliben/wasm-wat-samples.git
+[submodule "references/spec"]
+	path = references/spec
+	url = https://github.com/WebAssembly/spec.git
+	shallow = true

@@ -24,8 +24,9 @@ export type TypeNodes =
 	| TableType;
 
 type NumberType = { type: "NumberType"; value: "i32" | "i64" | "f32" | "f64" };
+const nts = new Set(["i32", "i64", "f32", "f64"] as const);
 export const numtype: Parser<NumberType> = do_(($) => {
-	const out = $(oneOf((["i32", "i64", "f32", "f64"] as const).map(literal)));
+	const out = $(word(nts));
 	return { type: "NumberType", value: out.value };
 });
 
@@ -35,12 +36,23 @@ export const vectype: Parser<VectorType> = do_(($) => {
 	return { type: "VectorType", value: out.value };
 });
 
-export type ReferenceType = {
-	type: "ReferenceType";
-	value: "funcref" | "externref";
-};
+export type ReferenceType = { type: "ReferenceType"; value: string };
+const rts = new Set([
+	"anyref",
+	"eqref",
+	"i31ref",
+	"structref",
+	"arrayref",
+	"nullref",
+	"funcref",
+	"nullfuncref",
+	"exnref",
+	"nullexnref",
+	"externref",
+	"nullexternref",
+] as const);
 export const reftype: Parser<ReferenceType> = do_(($) => {
-	const out = $(word(new Set(["funcref", "externref"] as const)));
+	const out = $(word(rts));
 	return { type: "ReferenceType", value: out.value };
 });
 
@@ -97,6 +109,13 @@ export const result: Parser<Result> = do_(($) => {
 	if (v.length === 0) return Error("expected one or more valtypes");
 	void $(literal(")"));
 	return { type: "Result", valtype: v, comments: c.comments() };
+});
+
+export type AddressType = { type: "AddressType"; value: "i32" | "i64" };
+const ats = new Set(["i32", "i64"] as const);
+export const addresstype: Parser<AddressType> = do_(($) => {
+	const out = $(word(ats));
+	return { type: "AddressType", value: out.value };
 });
 
 export type Limits = {
