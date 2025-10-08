@@ -126,8 +126,9 @@ function location(loc: { start: number; end: number }): Location {
 }
 
 type Tools = {
+	(s: string): void;
 	<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
-	peek: (p: Parser<Node> | ParserFunc<Node>) => boolean;
+	peek: (p: Parser<Node> | ParserFunc<Node> | string) => boolean;
 	exclusive: () => void;
 };
 
@@ -173,8 +174,11 @@ export function do_<T extends Node>(
 			throw e;
 		}
 
-		// Create tools object directly instead of using Object.assign
-		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
+		function $$(s: string): void;
+		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
+		function $$<S extends Node>(
+			p: Parser<S> | ParserFunc<S> | string,
+		): AST<S> | void {
 			let localInput = currentInput;
 			let localComments: AST<Comment>[] = [];
 			if (separator != null && input.index !== currentInput.index) {
@@ -184,6 +188,25 @@ export function do_<T extends Node>(
 					localComments = g.node.comments ?? [];
 				}
 			}
+
+			if (typeof p === "string") {
+				if (localInput.source.startsWith(p, localInput.index)) {
+					currentInput = { ...localInput, index: localInput.index + p.length };
+					comments.push(...localComments);
+					return;
+				} else {
+					const err = new ParseError(
+						`expected "${p}", but got "${localInput.source.substring(
+							localInput.index,
+							localInput.index + p.length,
+						)}"`,
+						localInput,
+						{ exclusive: isExclusive },
+					);
+					throw new Interrupt(err);
+				}
+			}
+
 			// Avoid calling parser() if p is already a Parser
 			const out =
 				typeof p === "function" ?
@@ -202,7 +225,7 @@ export function do_<T extends Node>(
 			return out.node;
 		}
 
-		function peek(p: Parser<Node> | ParserFunc<Node>): boolean {
+		function peek(p: Parser<Node> | ParserFunc<Node> | string): boolean {
 			let tempInput = currentInput;
 			if (separator != null && input.index !== currentInput.index) {
 				const g = separator.parse(tempInput);
@@ -210,6 +233,10 @@ export function do_<T extends Node>(
 					tempInput = g.nextInput;
 				}
 			}
+
+			if (typeof p === "string")
+				return tempInput.source.startsWith(p, tempInput.index);
+
 			// Avoid calling parser() if p is already a Parser
 			const out =
 				typeof p === "function" ?
@@ -297,6 +324,16 @@ export function eof(input: ParserInput): ParserOutput<None> {
 	if (input.index === input.source.length)
 		return { node: { type: "None" }, nextInput: input };
 	return new Error(`unexpected character "${input.source[input.index]}"`);
+}
+
+export function lazy<T extends Node>(create: () => Parser<T>): Parser<T> {
+	const self = {
+		parse: (input: ParserInput): ParserOutput<AST<T>> => {
+			self.parse = create().parse;
+			return self.parse(input);
+		},
+	};
+	return self;
 }
 
 export function dropNone<T extends Node>(n: AST<T | None>): AST<T> | undefined {

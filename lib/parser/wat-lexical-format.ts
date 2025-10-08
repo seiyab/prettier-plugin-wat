@@ -1,25 +1,29 @@
 import {
-	do_,
 	literal,
 	None,
 	oneOf,
-	opt,
 	ParserInput,
 	ParserOutput,
 	AST,
 	parser,
-	nop,
 } from "./p";
 
 export function spaces(input: ParserInput): ParserOutput<None> {
+	return {
+		node: { type: "None" },
+		nextInput: { ...input, index: next(input) },
+	};
+}
+const spacechars: ReadonlySet<string> = new Set([" ", "\t", "\n", "\r"]);
+
+function next(input: ParserInput): number {
 	let i = input.index;
 	for (; i < input.source.length; i++) {
 		if (spacechars.has(input.source[i])) continue;
 		break;
 	}
-	return { node: { type: "None" }, nextInput: { ...input, index: i } };
+	return i;
 }
-const spacechars: ReadonlySet<string> = new Set([" ", "\t", "\n", "\r"]);
 
 export type Comment = {
 	type: "Comment";
@@ -61,20 +65,19 @@ function blockComment(input: ParserInput): ParserOutput<Comment> {
 	};
 }
 
-export const gap = do_(
-	($) => {
-		const comments: AST<Comment>[] = [];
-		void $(opt(spaces));
-		for (;;) {
-			const c = $(opt(comment));
-			if (c.type === "None") break;
-			comments.push(c);
-			void $(opt(spaces));
-		}
-		return { type: "Gap", comments };
-	},
-	{ separator: nop },
-);
+export const gap = parser((input) => {
+	const comments: AST<Comment>[] = [];
+	let currentInput: ParserInput = { ...input };
+	currentInput.index = next(currentInput);
+	for (;;) {
+		const c = comment.parse(currentInput);
+		if (c instanceof Error) break;
+		comments.push(c.node);
+		currentInput = c.nextInput;
+		currentInput.index = next(currentInput);
+	}
+	return { node: { type: "Gap" as const, comments }, nextInput: currentInput };
+});
 
 function linebreak(c: string): boolean {
 	return c === "\n" || c === "\r";
