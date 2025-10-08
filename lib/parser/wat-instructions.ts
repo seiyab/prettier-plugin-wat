@@ -65,13 +65,13 @@ export type BlockInstruction = {
 	endId?: AST<Index>;
 };
 const blockInstruction: Parser<BlockInstruction> = do_(($) => {
-	void $(literal("block"));
+	$("block");
 	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
 	const instructions = c.drain($(many(instruction))).nodes;
-	void $(literal("end"));
+	$("end");
 	const endId = $(opt(index));
 	return {
 		type: "BlockInstruction",
@@ -91,13 +91,13 @@ export type LoopInstruction = {
 	endId?: AST<Index>;
 };
 const loopInstruction: Parser<LoopInstruction> = do_(($) => {
-	void $(literal("loop"));
+	$("loop");
 	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
 	const instructions = c.drain($(many(instruction))).nodes;
-	void $(literal("end"));
+	$("end");
 	const endId = $(opt(index));
 	return {
 		type: "LoopInstruction",
@@ -119,7 +119,7 @@ export type IfInstruction = {
 	endId?: AST<Index>;
 };
 const ifInstruction: Parser<IfInstruction> = do_(($) => {
-	void $(literal("if"));
+	$("if");
 	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
@@ -133,7 +133,7 @@ const ifInstruction: Parser<IfInstruction> = do_(($) => {
 				else_: c.drain($(many(instruction))).nodes,
 			}
 		:	{ elseId: undefined, else_: undefined };
-	void $(literal("end"));
+	$("end");
 	const endId = $.peek(index) ? dropNone($(opt(index))) : undefined;
 	return {
 		type: "IfInstruction",
@@ -216,7 +216,7 @@ export const variableInstruction: Parser<VariableInstruction> = lazy(() => {
 	const o = do_(
 		($) => {
 			const scope = $(word(new Set(["local", "global"]))).value;
-			void $(literal("."));
+			$(".");
 			const action = $(word(new Set(["get", "set", "tee"]))).value;
 			return { type: "Temporal", value: `${scope}.${action}` };
 		},
@@ -235,7 +235,7 @@ export const memarg: Parser<Memarg> = do_(($) => {
 	const offset = $(
 		opt(
 			do_(($) => {
-				void $(literal("offset="));
+				$("offset=");
 				void $.exclusive();
 				return $(uInteger);
 			}),
@@ -244,7 +244,7 @@ export const memarg: Parser<Memarg> = do_(($) => {
 	const align = $(
 		opt(
 			do_(($) => {
-				void $(literal("align="));
+				$("align=");
 				void $.exclusive();
 				return $(uInteger);
 			}),
@@ -298,7 +298,7 @@ const nis = new Set([
 export const numericSimpleInstruction: Parser<NumericSimpleInstruction> = do_(
 	($) => {
 		const ty = $(word(new Set(["i32", "i64", "f32", "f64"] as const))).value;
-		void $(literal("."));
+		$(".");
 		const op = $(word(nis)).value;
 		return { type: "NumericSimpleInstruction", op: `${ty}.${op}` };
 	},
@@ -379,7 +379,7 @@ const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = oneOf([
 	do_(
 		($) => {
 			const shape = $(word(shapes));
-			void $(literal("."));
+			$(".");
 			const op = $(word(vis));
 			return {
 				type: "VectorSimpleInstruction",
@@ -390,8 +390,8 @@ const vectorSimpleInstruction: Parser<VectorSimpleInstruction> = oneOf([
 	),
 	do_(
 		($) => {
-			void $(literal("v128"));
-			void $(literal("."));
+			$("v128");
+			$(".");
 			const op = $(
 				word(
 					new Set([
@@ -420,7 +420,7 @@ const vectorLaneInstruction: Parser<VectorLaneInstruction> = lazy(() => {
 	const o = do_(
 		($) => {
 			const shape = $(word(shapes)).value;
-			void $(literal("."));
+			$(".");
 			const o = $(
 				word(
 					new Set([
@@ -453,7 +453,7 @@ const vectorMemoryInstruction: Parser<VectorMemoryInstruction> = do_(($) => {
 	const op = $(
 		do_(
 			($) => {
-				void $(literal("v128."));
+				$("v128.");
 				const ls = $(word(new Set(["load", "store"])));
 				return { type: "Temporal", value: `v128.${ls.value}` };
 			},
@@ -512,8 +512,8 @@ export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
 		oneOf<{ type: string; value: string }>([
 			do_(
 				($) => {
-					void $(literal("memory"));
-					void $(literal("."));
+					$("memory");
+					$(".");
 					$.exclusive();
 					const o = $(word(mos));
 					return { type: "Temporal", value: `memory.${o.value}` };
@@ -523,7 +523,7 @@ export const memoryInstruction: Parser<MemoryInstruction> = do_(($) => {
 			do_(
 				($) => {
 					const ty = $(word(new Set(["i32", "i64", "f32", "f64"]))).value;
-					void $(literal("."));
+					$(".");
 					const ls = dropNone($(opt(word(new Set(["load", "store"])))));
 					if (ls !== undefined)
 						return { type: "Temporal", value: `${ty}.${ls.value}` };
@@ -584,32 +584,32 @@ export const foldedIfInstruction: Parser<FoldedIfInstruction> = do_(($) => {
 		return mn;
 	};
 
-	void $(literal("("));
-	void $(literal("if"));
+	$("(");
+	$("if");
 	void $.exclusive();
 
 	const result_ = $(opt(result));
 
 	const cond = c($(many(instruction))).nodes;
 
-	void $(literal("("));
-	void $(literal("then"));
+	$("(");
+	$("then");
 	const thenClause = c($(many(instruction))).nodes;
-	void $(literal(")"));
+	$(")");
 
 	const elseClause = $(
 		opt(
 			do_(($) => {
-				void $(literal("("));
-				void $(literal("else"));
+				$("(");
+				$("else");
 				const elseInstructions = $(many(instruction));
-				void $(literal(")"));
+				$(")");
 				return elseInstructions;
 			}),
 		),
 	);
 
-	void $(literal(")"));
+	$(")");
 
 	return {
 		type: "FoldedIfInstruction",
@@ -644,10 +644,10 @@ export type FoldedPlainInstruction = {
 	operands: AST<FoldedInstruction>[];
 };
 const foldedPlainInstruction: Parser<FoldedPlainInstruction> = do_(($) => {
-	void $(literal("("));
+	$("(");
 	const operator = $(plainInstruction);
 	const { nodes: operands, comments } = $(many(foldedInstrucion));
-	void $(literal(")"));
+	$(")");
 	return { type: "FoldedPlainInstruction", operator, operands, comments };
 });
 
@@ -658,14 +658,14 @@ export type FoldedBlockInstruction = {
 	instructions: AST<InstructionNode>[];
 };
 const foldedBlockInstruction: Parser<FoldedBlockInstruction> = do_(($) => {
-	void $(literal("("));
-	void $(literal("block"));
+	$("(");
+	$("block");
 	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
 	const instructions = c.drain($(many(instruction))).nodes;
-	void $(literal(")"));
+	$(")");
 	return {
 		type: "FoldedBlockInstruction",
 		label: dropNone(label),
@@ -682,14 +682,14 @@ export type FoldedLoopInstruction = {
 	instructions: AST<InstructionNode>[];
 };
 const foldedLoopInstruction: Parser<FoldedLoopInstruction> = do_(($) => {
-	void $(literal("("));
-	void $(literal("loop"));
+	$("(");
+	$("loop");
 	void $.exclusive();
 	const c = commentCollector();
 	const label = $(opt(index));
 	const blocktype = $(typeuse);
 	const instructions = c.drain($(many(instruction))).nodes;
-	void $(literal(")"));
+	$(")");
 	return {
 		type: "FoldedLoopInstruction",
 		label: dropNone(label),

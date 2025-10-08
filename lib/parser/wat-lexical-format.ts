@@ -1,14 +1,11 @@
 import {
-	do_,
 	literal,
 	None,
 	oneOf,
-	opt,
 	ParserInput,
 	ParserOutput,
 	AST,
 	parser,
-	nop,
 } from "./p";
 
 export function spaces(input: ParserInput): ParserOutput<None> {

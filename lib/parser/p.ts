@@ -126,6 +126,7 @@ function location(loc: { start: number; end: number }): Location {
 }
 
 type Tools = {
+	(s: string): void;
 	<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
 	peek: (p: Parser<Node> | ParserFunc<Node>) => boolean;
 	exclusive: () => void;
@@ -173,8 +174,11 @@ export function do_<T extends Node>(
 			throw e;
 		}
 
-		// Create tools object directly instead of using Object.assign
-		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S> {
+		function $$(s: string): void;
+		function $$<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
+		function $$<S extends Node>(
+			p: Parser<S> | ParserFunc<S> | string,
+		): AST<S> | void {
 			let localInput = currentInput;
 			let localComments: AST<Comment>[] = [];
 			if (separator != null && input.index !== currentInput.index) {
@@ -184,6 +188,29 @@ export function do_<T extends Node>(
 					localComments = g.node.comments ?? [];
 				}
 			}
+
+			if (typeof p === "string") {
+				if (localInput.source.startsWith(p, localInput.index)) {
+					currentInput = { ...localInput, index: localInput.index + p.length };
+					comments.push(...localComments);
+					return;
+				} else {
+					const err = new ParseError(
+						/*
+						`expected "${p}", but got "${localInput.source.substring(
+							localInput.index,
+							localInput.index + p.length,
+						)}"`,
+						localInput,
+						*/
+						`expected "${p}"`,
+						localInput,
+						{ exclusive: isExclusive },
+					);
+					throw new Interrupt(err);
+				}
+			}
+
 			// Avoid calling parser() if p is already a Parser
 			const out =
 				typeof p === "function" ?
