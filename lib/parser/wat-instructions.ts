@@ -11,6 +11,7 @@ import {
 	dropNone,
 	nop,
 	commentCollector,
+	lazy,
 } from "./p";
 import { Result, result } from "./wat-types";
 import {
@@ -34,14 +35,12 @@ type Instruction =
 	| PlainInstruction
 	| FoldedInstruction;
 
-export const instr: Parser<Instruction> = do_(($) =>
-	$(
-		oneOf<Instruction>([
-			blockControlInstruction,
-			plainInstruction,
-			foldedInstrucion,
-		]),
-	),
+export const instr: Parser<Instruction> = lazy(() =>
+	oneOf<Instruction>([
+		blockControlInstruction,
+		plainInstruction,
+		foldedInstrucion,
+	]),
 );
 /** @deprecated use `instr` instead */
 export const instruction = instr;
@@ -50,14 +49,12 @@ type BlockControlInstruction =
 	| IfInstruction
 	| BlockInstruction
 	| LoopInstruction;
-const blockControlInstruction: Parser<BlockControlInstruction> = do_(($) =>
-	$(
-		oneOf<BlockControlInstruction>([
-			ifInstruction,
-			blockInstruction,
-			loopInstruction,
-		]),
-	),
+const blockControlInstruction: Parser<BlockControlInstruction> = lazy(() =>
+	oneOf<BlockControlInstruction>([
+		ifInstruction,
+		blockInstruction,
+		loopInstruction,
+	]),
 );
 
 export type BlockInstruction = {
@@ -215,21 +212,22 @@ type VariableInstruction = {
 	op: string;
 	index: AST<Index>;
 };
-export const variableInstruction: Parser<VariableInstruction> = do_(($) => {
-	const op = $(
-		do_(
-			($) => {
-				const scope = $(word(new Set(["local", "global"]))).value;
-				void $(literal("."));
-				const action = $(word(new Set(["get", "set", "tee"]))).value;
-				return { type: "Temporal", value: `${scope}.${action}` };
-			},
-			{ separator: nop },
-		),
-	).value;
-	void $.exclusive();
-	const idx = $<Index>(index);
-	return { type: "VariableInstruction", op, index: idx };
+export const variableInstruction: Parser<VariableInstruction> = lazy(() => {
+	const o = do_(
+		($) => {
+			const scope = $(word(new Set(["local", "global"]))).value;
+			void $(literal("."));
+			const action = $(word(new Set(["get", "set", "tee"]))).value;
+			return { type: "Temporal", value: `${scope}.${action}` };
+		},
+		{ separator: nop },
+	);
+	return do_(($) => {
+		const op = $(o).value;
+		void $.exclusive();
+		const idx = $<Index>(index);
+		return { type: "VariableInstruction", op, index: idx };
+	});
 });
 
 export type Memarg = { type: "Memarg"; offset?: UInteger; align?: UInteger };
@@ -313,23 +311,24 @@ export type NumericConstInstruction = {
 	val: AST<Integer | Float>;
 };
 
-export const numericConstInstruction: Parser<NumericConstInstruction> =
-	oneOf<NumericConstInstruction>([
-		do_(($) => {
-			const op = $(oneOf(["i32.const", "i64.const"].map(literal))).value;
-			const val = $(integer);
-			return { type: "NumericConstInstruction", op, val };
-		}),
-		do_(($) => {
-			const op = $(
-				oneOf(
-					["i32.const", "i64.const", "f32.const", "f64.const"].map(literal),
-				),
-			).value;
-			const val = $(float);
-			return { type: "NumericConstInstruction", op, val };
-		}),
-	]);
+export const numericConstInstruction: Parser<NumericConstInstruction> = lazy(
+	() => {
+		const intOp = oneOf(["i32.const", "i64.const"].map(literal));
+		const floatOp = oneOf(["f32.const", "f64.const"].map(literal));
+		return oneOf<NumericConstInstruction>([
+			do_(($) => {
+				const op = $(intOp).value;
+				const val = $(integer);
+				return { type: "NumericConstInstruction", op, val };
+			}),
+			do_(($) => {
+				const op = $(floatOp).value;
+				const val = $(float);
+				return { type: "NumericConstInstruction", op, val };
+			}),
+		]);
+	},
+);
 
 export const numericInstruction: Parser<NumericInstruction> =
 	oneOf<NumericInstruction>([
@@ -417,30 +416,31 @@ type VectorLaneInstruction = {
 	op: string;
 	laneidx: Index;
 };
-const vectorLaneInstruction: Parser<VectorLaneInstruction> = do_(($) => {
-	const op = $(
-		do_(
-			($) => {
-				const shape = $(word(shapes)).value;
-				void $(literal("."));
-				const o = $(
-					word(
-						new Set([
-							"extract_lane_s",
-							"extract_lane_u",
-							"replace_lane",
-							"extract_lane",
-						]),
-					),
-				).value;
-				return { type: "Temporal", value: `${shape}.${o}` };
-			},
-			{ separator: nop },
-		),
-	).value;
-	$.exclusive();
-	const laneidx = $(uInteger);
-	return { type: "VectorLaneInstruction", op, laneidx };
+const vectorLaneInstruction: Parser<VectorLaneInstruction> = lazy(() => {
+	const o = do_(
+		($) => {
+			const shape = $(word(shapes)).value;
+			void $(literal("."));
+			const o = $(
+				word(
+					new Set([
+						"extract_lane_s",
+						"extract_lane_u",
+						"replace_lane",
+						"extract_lane",
+					]),
+				),
+			).value;
+			return { type: "Temporal", value: `${shape}.${o}` };
+		},
+		{ separator: nop },
+	);
+	return do_(($) => {
+		const op = $(o).value;
+		$.exclusive();
+		const laneidx = $(uInteger);
+		return { type: "VectorLaneInstruction", op, laneidx };
+	});
 });
 
 export type VectorMemoryInstruction = {

@@ -9,6 +9,7 @@ import {
 	oneOf,
 	dropNone,
 	commentCollector,
+	lazy,
 } from "./p";
 import {
 	identifier,
@@ -484,36 +485,35 @@ type ModuleField =
 	| Export
 	| ElementSegment
 	| DataSegment;
-export const module_: Parser<Module> = do_(($) => {
-	void $(literal("("));
-	void $(literal("module"));
-	const id = $(opt(identifier));
-	const modulefields: AST<ModuleField>[] = [];
-	for (;;) {
-		if (!$.peek(literal("("))) break;
-		modulefields.push(
-			$(
-				oneOf<ModuleField>([
-					type,
-					export_,
-					function_,
-					import_,
-					memory_,
-					global_,
-					table,
-					inlineTable,
-					element,
-					data,
-				]),
-			),
-		);
-	}
-	void $(literal(")"));
-	return {
-		type: "Module",
-		id: id.type !== "None" ? id : undefined,
-		modulefields,
-	};
+export const module_: Parser<Module> = lazy(() => {
+	const mf = oneOf<ModuleField>([
+		type,
+		export_,
+		function_,
+		import_,
+		memory_,
+		global_,
+		table,
+		inlineTable,
+		element,
+		data,
+	]);
+	return do_(($) => {
+		void $(literal("("));
+		void $(literal("module"));
+		const id = $(opt(identifier));
+		const modulefields: AST<ModuleField>[] = [];
+		for (;;) {
+			if (!$.peek(literal("("))) break;
+			modulefields.push($(mf));
+		}
+		void $(literal(")"));
+		return {
+			type: "Module",
+			id: id.type !== "None" ? id : undefined,
+			modulefields,
+		};
+	});
 });
 
 export type Local = {

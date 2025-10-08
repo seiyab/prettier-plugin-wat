@@ -299,6 +299,16 @@ export function eof(input: ParserInput): ParserOutput<None> {
 	return new Error(`unexpected character "${input.source[input.index]}"`);
 }
 
+export function lazy<T extends Node>(create: () => Parser<T>): Parser<T> {
+	const self = {
+		parse: (input: ParserInput): ParserOutput<AST<T>> => {
+			self.parse = create().parse;
+			return self.parse(input);
+		},
+	};
+	return self;
+}
+
 export function dropNone<T extends Node>(n: AST<T | None>): AST<T> | undefined {
 	if (n.type !== "None") return n as AST<T>;
 	return undefined;
