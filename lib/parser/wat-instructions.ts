@@ -627,7 +627,7 @@ export type FoldedInstruction =
 	| FoldedBlockInstruction
 	| FoldedLoopInstruction;
 export const foldedInstrucion: Parser<FoldedInstruction> = do_(($) => {
-	if (!$.peek(literal("("))) return new Error("expected '('");
+	if (!$.peek("(")) return new Error("expected '('");
 	return $(
 		oneOf<FoldedInstruction>([
 			foldedIfInstruction,

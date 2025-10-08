@@ -128,7 +128,7 @@ function location(loc: { start: number; end: number }): Location {
 type Tools = {
 	(s: string): void;
 	<S extends Node>(p: Parser<S> | ParserFunc<S>): AST<S>;
-	peek: (p: Parser<Node> | ParserFunc<Node>) => boolean;
+	peek: (p: Parser<Node> | ParserFunc<Node> | string) => boolean;
 	exclusive: () => void;
 };
 
@@ -196,14 +196,10 @@ export function do_<T extends Node>(
 					return;
 				} else {
 					const err = new ParseError(
-						/*
 						`expected "${p}", but got "${localInput.source.substring(
 							localInput.index,
 							localInput.index + p.length,
 						)}"`,
-						localInput,
-						*/
-						`expected "${p}"`,
 						localInput,
 						{ exclusive: isExclusive },
 					);
@@ -229,7 +225,7 @@ export function do_<T extends Node>(
 			return out.node;
 		}
 
-		function peek(p: Parser<Node> | ParserFunc<Node>): boolean {
+		function peek(p: Parser<Node> | ParserFunc<Node> | string): boolean {
 			let tempInput = currentInput;
 			if (separator != null && input.index !== currentInput.index) {
 				const g = separator.parse(tempInput);
@@ -237,6 +233,10 @@ export function do_<T extends Node>(
 					tempInput = g.nextInput;
 				}
 			}
+
+			if (typeof p === "string")
+				return tempInput.source.startsWith(p, tempInput.index);
+
 			// Avoid calling parser() if p is already a Parser
 			const out =
 				typeof p === "function" ?

@@ -71,7 +71,7 @@ export const program: Parser<Program> = do_(($) => {
 	const body: AST<Module | Assert>[] = [];
 	comments.push(...$(gap).comments);
 	for (;;) {
-		if (!$.peek(literal("("))) break;
+		if (!$.peek("(")) break;
 		const m = $(oneOf<Module | Assert>([module_, assert]));
 		body.push(m);
 	}
@@ -86,11 +86,11 @@ export type Type = {
 	functype: AST<FunctionType>;
 };
 const type: Parser<Type> = do_(($) => {
-	void $(literal("("));
-	void $(literal("type"));
+	void $("(");
+	void $("type");
 	const id = $(opt(identifier));
 	const functype_ = $(functype);
-	void $(literal(")"));
+	void $(")");
 	return { type: "Type", id: dropNone(id), functype: functype_ };
 });
 
@@ -105,10 +105,10 @@ export const typeuse: Parser<TypeUse> = do_(($) => {
 	const idx = $(
 		opt(
 			do_(($) => {
-				void $(literal("("));
-				void $(literal("type"));
+				void $("(");
+				void $("type");
 				const i = $(index);
-				void $(literal(")"));
+				void $(")");
 				return i;
 			}),
 		),
@@ -131,11 +131,11 @@ export type Export = {
 	externidx: AST<ExternIdx>;
 };
 export const export_: Parser<Export> = do_(($) => {
-	void $(literal("("));
-	void $(literal("export"));
+	void $("(");
+	void $("export");
 	const name = $(stringLiteral);
 	const ed = $(externidx);
-	void $(literal(")"));
+	void $(")");
 	return { type: "Export", name, externidx: ed };
 });
 type ExternIdx = {
@@ -151,10 +151,10 @@ const exportKinds = new Set([
 	"global",
 ] as const);
 const externidx = do_(($): ExternIdx => {
-	void $(literal("("));
+	void $("(");
 	const kind = $(word(exportKinds)).value;
 	const idx = $(index);
-	void $(literal(")"));
+	void $(")");
 	return { type: "ExternIdx", kind, index: idx };
 });
 
@@ -170,12 +170,12 @@ export type ImportDesc = {
 );
 
 const funcimportdesc: Parser<ImportDesc> = do_(($) => {
-	void $(literal("("));
+	void $("(");
 	const kind = $(literal("func")).value;
 	$.exclusive();
 	const id = $(opt(identifier));
 	const typeuse_ = $(typeuse);
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "ImportDesc",
 		kind,
@@ -185,12 +185,12 @@ const funcimportdesc: Parser<ImportDesc> = do_(($) => {
 });
 
 const memimportdesc: Parser<ImportDesc> = do_(($) => {
-	void $(literal("("));
+	void $("(");
 	const kind = $(literal("memory")).value;
 	$.exclusive();
 	const id = $(opt(identifier));
 	const memtype_ = $(memtype);
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "ImportDesc",
 		kind,
@@ -200,12 +200,12 @@ const memimportdesc: Parser<ImportDesc> = do_(($) => {
 });
 
 const tableimportdesc: Parser<ImportDesc> = do_(($) => {
-	void $(literal("("));
+	void $("(");
 	const kind = $(literal("table")).value;
 	$.exclusive();
 	const id = $(opt(identifier));
 	const tabletype_ = $(tabletype);
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "ImportDesc",
 		kind,
@@ -227,13 +227,13 @@ export type Import = {
 	desc: AST<ImportDesc>;
 };
 export const import_: Parser<Import> = do_(($) => {
-	void $(literal("("));
-	void $(literal("import"));
+	void $("(");
+	void $("import");
 	$.exclusive();
 	const mod = $(stringLiteral);
 	const name = $(stringLiteral);
 	const desc = $(importdesc);
-	void $(literal(")"));
+	void $(")");
 	return { type: "Import", module: mod, name, desc };
 });
 
@@ -245,12 +245,12 @@ export type Memory = {
 };
 
 const memory_: Parser<Memory> = do_(($) => {
-	void $(literal("("));
-	void $(literal("memory"));
+	void $("(");
+	void $("memory");
 	const id = $(opt(identifier));
 	const ex = $(opt(inlineExport));
 	const mt = $(memtype);
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "Memory",
 		id: id.type === "None" ? undefined : id,
@@ -266,12 +266,12 @@ export type Table = {
 	tabletype: AST<TableType>;
 };
 const table: Parser<Table> = do_(($) => {
-	void $(literal("("));
-	void $(literal("table"));
+	void $("(");
+	void $("table");
 	const id = $(opt(identifier));
 	const ex = $(opt(inlineExport));
 	const tt = $(tabletype);
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "Table",
 		id: id.type === "None" ? undefined : id,
@@ -288,16 +288,16 @@ export type InlineTable = {
 	elemlist: AST<ElementList | ElementListAbbreviation>;
 };
 export const inlineTable: Parser<InlineTable> = do_(($) => {
-	void $(literal("("));
-	void $(literal("table"));
+	void $("(");
+	void $("table");
 	const id = $(opt(identifier));
 	const at = $(opt(addresstype));
 	const rt = $(reftype);
-	void $(literal("("));
-	void $(literal("elem"));
+	void $("(");
+	void $("elem");
 	const elemlist_ = $(elemlist);
-	void $(literal(")"));
-	void $(literal(")"));
+	void $(")");
+	void $(")");
 	return {
 		type: "InlineTable",
 		id: dropNone(id),
@@ -316,8 +316,8 @@ export type ElementSegment = {
 	elemlist: AST<ElementList | ElementListAbbreviation>;
 };
 const element: Parser<ElementSegment> = do_(($) => {
-	void $(literal("("));
-	void $(literal("elem"));
+	void $("(");
+	void $("elem");
 	const id = $(opt(identifier));
 	const declare = $(opt(literal("declare")));
 	const tableuse_ =
@@ -325,22 +325,22 @@ const element: Parser<ElementSegment> = do_(($) => {
 	const mode =
 		declare.type !== "None" ? "declarative"
 		: tableuse_ != null ? "active"
-		: $.peek(literal("(")) ? "active"
+		: $.peek("(") ? "active"
 		: "passive";
 	const offset =
 		mode === "active" ?
 			$(
 				do_(($) => {
-					void $(literal("("));
+					void $("(");
 					void $(opt(literal("offset")));
 					const e = $(expr);
-					void $(literal(")"));
+					void $(")");
 					return e;
 				}),
 			)
 		:	undefined;
 	const elemlist_ = $(elemlist);
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "ElementSegment",
 		id: dropNone(id),
@@ -392,19 +392,19 @@ const elemlist: Parser<ElementList | ElementListAbbreviation> = oneOf<
 
 type ElementExpr = { type: "ElementExpr"; expr: AST<Expression> };
 const elemexpr: Parser<ElementExpr> = do_(($) => {
-	void $(literal("("));
+	void $("(");
 	void $(opt(literal("item")));
 	const ex = $(expr);
-	void $(literal(")"));
+	void $(")");
 	return { type: "ElementExpr", expr: ex };
 });
 
 type TableUse = { type: "TableUse"; index: AST<Index> };
 const tableuse: Parser<TableUse> = do_(($) => {
-	void $(literal("("));
-	void $(literal("table"));
+	void $("(");
+	void $("table");
 	const index_ = $(index);
-	void $(literal(")"));
+	void $(")");
 	return { type: "TableUse", index: index_ };
 });
 
@@ -416,12 +416,12 @@ export type DataSegment = {
 };
 
 const data: Parser<DataSegment> = do_(($) => {
-	void $(literal("("));
-	void $(literal("data"));
+	void $("(");
+	void $("data");
 	const mu = $(opt(memuse));
 	const offset = $(offsetAbbreviation);
 	const inits = $(many(stringLiteral));
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "DataSegment",
 		memuse: dropNone(mu),
@@ -433,10 +433,10 @@ const data: Parser<DataSegment> = do_(($) => {
 
 type Memuse = { type: "memuse"; memidx: AST<Index> };
 const memuse: Parser<Memuse> = do_(($) => {
-	void $(literal("("));
-	void $(literal("memory"));
+	void $("(");
+	void $("memory");
 	const memidx = $(index);
-	void $(literal(")"));
+	void $(")");
 	return { type: "memuse", memidx };
 });
 
@@ -445,9 +445,9 @@ type OffsetAbbreviation = {
 	instr: AST<InstructionNode>;
 };
 const offsetAbbreviation: Parser<OffsetAbbreviation> = do_(($) => {
-	void $(literal("("));
+	void $("(");
 	const instr = $(instruction);
-	void $(literal(")"));
+	void $(")");
 	return { type: "OffsetAbbreviation", instr };
 });
 
@@ -459,12 +459,12 @@ export type Global = {
 };
 const global_: Parser<Global> = do_(($) => {
 	const c = commentCollector();
-	void $(literal("("));
-	void $(literal("global"));
+	void $("(");
+	void $("global");
 	const id = $(opt(identifier));
 	const gt = $(globaltype);
 	const expr = c.drain($(many(instruction))).nodes;
-	void $(literal(")"));
+	void $(")");
 	return { type: "Global", id: dropNone(id), globaltype: gt, expr };
 });
 
@@ -499,15 +499,15 @@ export const module_: Parser<Module> = lazy(() => {
 		data,
 	]);
 	return do_(($) => {
-		void $(literal("("));
-		void $(literal("module"));
+		void $("(");
+		void $("module");
 		const id = $(opt(identifier));
 		const modulefields: AST<ModuleField>[] = [];
 		for (;;) {
-			if (!$.peek(literal("("))) break;
+			if (!$.peek("(")) break;
 			modulefields.push($(mf));
 		}
-		void $(literal(")"));
+		void $(")");
 		return {
 			type: "Module",
 			id: id.type !== "None" ? id : undefined,
@@ -523,12 +523,12 @@ export type Local = {
 };
 const local: Parser<Local> = do_(($) => {
 	const c = commentCollector();
-	void $(literal("("));
-	void $(literal("local"));
+	void $("(");
+	void $("local");
 	const id = $(opt(identifier));
 	const v = c.drain($(many(valtype))).nodes;
 	if (v.length === 0) return new Error("local must have at least one valtype");
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "Local",
 		id: id.type === "None" ? undefined : id,
@@ -547,15 +547,15 @@ export type Function = {
 };
 export const function_: Parser<Function> = do_(($) => {
 	const c = commentCollector();
-	void $(literal("("));
-	void $(literal("func"));
+	void $("(");
+	void $("func");
 	void $.exclusive();
 	const id = $(opt(identifier));
 	const ex = $(opt(inlineExport));
 	const tu = $(typeuse);
 	const locals = c.drain($(many(local))).nodes;
 	const instructions = c.drain($(many(instruction))).nodes;
-	void $(literal(")"));
+	void $(")");
 	return {
 		type: "Function",
 		id: id.type === "None" ? undefined : id,
@@ -569,9 +569,9 @@ export const function_: Parser<Function> = do_(($) => {
 type FunctionElement = InlineExport;
 type InlineExport = { type: "InlineExport"; name: StringLiteral };
 const inlineExport: Parser<InlineExport> = do_(($) => {
-	void $(literal("("));
-	void $(literal("export"));
+	void $("(");
+	void $("export");
 	const name = $(stringLiteral);
-	void $(literal(")"));
+	void $(")");
 	return { type: "InlineExport", name };
 });
